@@ -1,0 +1,66 @@
+package com.cakewallet.bitbox_flutter.operations;
+
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
+import android.os.Build;
+
+import com.cakewallet.bitbox_flutter.BitboxManager;
+import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodChannel;
+
+public class RequestPermissionOperation extends UsbMethodCallOperation {
+
+    public RequestPermissionOperation(BitboxManager manager) {
+        super(manager.getUsbManager());
+    }
+
+    @Override
+    public void onMethodCall(Context context, MethodCall methodCall, MethodChannel.Result result) {
+        String identifier = methodCall.argument("identifier");
+        UsbDevice device = usbManager.getDeviceList().get(identifier);
+        if (device == null) {
+            result.success(false);
+            return;
+        }
+
+        if (usbManager.hasPermission(device)) {
+            result.success(true);
+            return;
+        }
+
+        BroadcastReceiver receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                context.unregisterReceiver(this);
+                boolean granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
+                result.success(granted);
+            }
+        };
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, new IntentFilter(ACTION_USB_PERMISSION), Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            context.registerReceiver(receiver, new IntentFilter(ACTION_USB_PERMISSION));
+        }
+
+        usbManager.requestPermission(device, getPendingIntent(context));
+    }
+
+    static final String ACTION_USB_PERMISSION = "io.blockshake.ledger.USB_PERMISSION";
+
+    PendingIntent getPendingIntent(Context context) {
+        int flags;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            flags = PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT;
+        } else {
+            flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        }
+
+        return PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), flags);
+    }
+}
