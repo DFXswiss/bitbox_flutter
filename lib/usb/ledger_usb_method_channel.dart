@@ -23,15 +23,19 @@ class MethodChannelLedgerUsb extends LedgerUsbPlatform {
   @override
   Future<bool> requestPermission(UsbDevice usbDevice) async {
     final granted = await methodChannel.invokeMethod<bool>(
-        'requestPermission', usbDevice.toMap());
+      'requestPermission',
+      usbDevice.toMap(),
+    );
 
     return granted ?? false;
   }
 
   @override
   Future<bool> open(UsbDevice usbDevice) async {
-    final open =
-        await methodChannel.invokeMethod<bool>('open', usbDevice.toMap());
+    final open = await methodChannel.invokeMethod<bool>(
+      'open',
+      usbDevice.toMap(),
+    );
 
     return open ?? false;
   }
@@ -55,14 +59,50 @@ class MethodChannelLedgerUsb extends LedgerUsbPlatform {
 
   @override
   Future<int> transferOut(Uint8List data, int timeout) async {
-    final length = await methodChannel.invokeMethod<int>(
-      'transferOut',
-      {
-        'data': data,
-        'timeout': timeout,
-      },
-    );
+    final length = await methodChannel.invokeMethod<int>('transferOut', {
+      'data': data,
+      'timeout': timeout,
+    });
 
     return length ?? -1;
+  }
+
+  @override
+  Future<bool> initBitBox() async {
+    final result = await methodChannel.invokeMethod<bool>('initBitBox');
+
+    return result ?? false;
+  }
+
+  @override
+  Future<String> getChannelHash() async {
+    final result = await methodChannel.invokeMethod<String>('getChannelHash');
+
+    return result ?? '';
+  }
+
+  @override
+  Future<bool> supportsETH(int chainId) async {
+    final result = await methodChannel.invokeMethod<bool>('supportsETH', {
+      'chainId': chainId,
+    });
+
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> supportsERC20(String contractAddress) async {
+    final result = await methodChannel.invokeMethod<bool>('supportsERC20', {
+      'contractAddress': contractAddress,
+    });
+
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> supportsLTC() async {
+    final result = await methodChannel.invokeMethod<bool>('supportsLTC');
+
+    return result ?? false;
   }
 }

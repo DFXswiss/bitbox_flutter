@@ -2,7 +2,10 @@ module github.com/konstantinullrich/bitbox_flutter
 
 go 1.24.2
 
-require github.com/BitBoxSwiss/bitbox02-api-go v0.0.0-20250624081228-dba834f08d4b
+require (
+	github.com/BitBoxSwiss/bitbox02-api-go v0.0.0-20250624081228-dba834f08d4b
+	golang.org/x/mobile v0.0.0-20250711185624-d5bb5ecc55c0
+)
 
 require (
 	github.com/btcsuite/btcd v0.24.2 // indirect
@@ -15,6 +18,9 @@ require (
 	github.com/flynn/noise v1.1.0 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	golang.org/x/crypto v0.27.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/mod v0.26.0 // indirect
+	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/tools v0.35.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 )

@@ -21,6 +21,14 @@ allprojects {
     }
 }
 
+rootProject.allprojects {
+    repositories {
+        flatDir {
+            dirs project(':bitbox_flutter').file('libs')
+        }
+    }
+}
+
 apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
 
@@ -48,6 +56,8 @@ android {
     }
 
     dependencies {
+        implementation (name: 'api', ext: 'aar')
+
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")
     }

@@ -1,16 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ffi';
-import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:bitbox_flutter/bitbox_usb_manager.dart';
-import 'package:bitbox_flutter/generated_bindings.g.dart';
-import 'package:bitbox_flutter/messages/bitbox02_system.pb.dart';
-import 'package:bitbox_flutter/messages/hww.pb.dart';
+import 'package:bitbox_flutter/usb/ledger_usb_platform_interface.dart';
 import 'package:bitbox_flutter/usb/usb_device.dart';
 import 'package:flutter/material.dart';
-import 'package:ffi/ffi.dart';
+import 'package:flutter/services.dart';
 
 
 void main() {
@@ -51,39 +46,15 @@ class _MyAppState extends State<MyApp> {
   Future<void> onPressDevice(UsbDevice usbDevice) async {
     await _bitboxFlutterPlugin.connect(usbDevice);
     print("Connected!");
+    await LedgerUsbPlatform.instance.initBitBox();
 
-    final response = await _bitboxFlutterPlugin.sendRawOperation(utf8.encode('i'));
+    final ltc = await _bitboxFlutterPlugin.supportsLTC();
+    final eth = await _bitboxFlutterPlugin.supportsETH(1);
+    final base = await _bitboxFlutterPlugin.supportsETH(8453);
+    final deuro = await _bitboxFlutterPlugin.supportsERC20("0xbA3f535bbCcCcA2A154b573Ca6c5A49BAAE0a3ea");
+    final usdc = await _bitboxFlutterPlugin.supportsERC20("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
 
-    print(response);
-
-    // final reg = Request.create()
-    //     ..deviceInfo = DeviceInfoRequest.create();
-    final bbf = BitBoxFlutter(DynamicLibrary.open('bitbox.so'));
-
-    // bbf.NewDevice();
-
-    final productPtr = usbDevice.productName.toNativeUtf8();
-    final isBB = bbf.isBitBox02(productPtr.cast(), usbDevice.vendorId, usbDevice.productId);
-
-    malloc.free(productPtr);
-    print(isBB);
-
-    final condition = NativeCallable<CallbackProgress>.listener((int a) {
-      final dylib = DynamicLibrary.open('bitbox.so');
-      final bbf1 = BitBoxFlutter(dylib);
-      bbf1.SetMessage("bbbbb".toNativeUtf8().cast());
-      print("${a}aaaaaaa");
-    });
-
-    final addr = condition.nativeFunction.address;
-    await Isolate.run(() {
-      final dylib = DynamicLibrary.open('bitbox.so');
-      final bbf1 = BitBoxFlutter(dylib);
-      final device = bbf1.Count(1, Pointer.fromAddress(addr));
-      print(device.cast<Utf8>().toDartString());
-
-    });
-
+    print("LTC: $ltc\nETH: $eth\nBASE: $base\ndEURO: $deuro\nUSDC: $usdc");
   }
 
   @override
@@ -92,7 +63,7 @@ class _MyAppState extends State<MyApp> {
     home: Scaffold(
       appBar: AppBar(title: const Text('BitBox'),
       actions: [
-        IconButton(onPressed: initPlatformState, icon: Icon(Icons.ac_unit))
+        IconButton(onPressed: initPlatformState, icon: Icon(Icons.refresh))
       ],
       ),
       body: Center(

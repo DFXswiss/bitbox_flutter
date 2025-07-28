@@ -51,7 +51,7 @@ public class RequestPermissionOperation extends UsbMethodCallOperation {
         usbManager.requestPermission(device, getPendingIntent(context));
     }
 
-    static final String ACTION_USB_PERMISSION = "io.blockshake.ledger.USB_PERMISSION";
+    static final String ACTION_USB_PERMISSION = "com.cakewalle.bitbox.USB_PERMISSION";
 
     PendingIntent getPendingIntent(Context context) {
         int flags;

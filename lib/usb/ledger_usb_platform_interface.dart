@@ -38,5 +38,15 @@ abstract class LedgerUsbPlatform extends PlatformInterface {
 
   Future<int> transferOut(Uint8List data, int timeout);
 
+  Future<bool> initBitBox();
+
+  Future<String> getChannelHash();
+
+  Future<bool> supportsETH(int chainId);
+
+  Future<bool> supportsERC20(String contractAddress);
+
+  Future<bool> supportsLTC();
+
   Future<bool> close();
 }

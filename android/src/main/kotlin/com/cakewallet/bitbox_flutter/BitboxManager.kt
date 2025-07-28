@@ -1,6 +1,7 @@
 package com.cakewallet.bitbox_flutter
 
 import android.hardware.usb.*
+import api.Api
 
 class BitboxManager(var usbManager: UsbManager) {
     var device: UsbDevice? = null
@@ -10,6 +11,8 @@ class BitboxManager(var usbManager: UsbManager) {
     private var usbInterface: UsbInterface? = null
     private var usbEndpointReadIn: UsbEndpoint? = null
     private var usbEndpointWriteOut: UsbEndpoint? = null
+
+    var bitboxDevice: GoDeviceInfo? = null
 
     /**
      * Open a new usb connection with the specified device.
@@ -62,6 +65,17 @@ class BitboxManager(var usbManager: UsbManager) {
         this.device = device
         this.connection = connection
         this.usbInterface = usbInterface
+    }
+
+    @Throws(BitBoxException::class)
+    fun connectBitBox(identifier: String) {
+        val device = usbManager.getDeviceList().get(identifier)
+        if (device == null) {
+            throw BitBoxException(0x60000, "Device with identifier not found.")
+        }
+
+        bitboxDevice = GoDeviceInfo(device, usbManager)
+        Api.getDevice(bitboxDevice!!.open())
     }
 
     /**
