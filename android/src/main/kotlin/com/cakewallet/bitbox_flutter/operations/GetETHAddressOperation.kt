@@ -6,14 +6,18 @@ import com.cakewallet.bitbox_flutter.BitboxManager
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
-class SupportsETHOperation(manager: BitboxManager) : UsbMethodCallOperation(manager.usbManager) {
+class GetETHAddressOperation(manager: BitboxManager) : UsbMethodCallOperation(manager.usbManager) {
     override fun onMethodCall(
         context: Context,
         methodCall: MethodCall,
         result: MethodChannel.Result
     ) {
         val chainID: Int? = methodCall.argument("chainId")
-        val res = Api.supportsETH(chainID!!.toLong())
+        val keypath: String? = methodCall.argument("keypath")
+        val outputType: Int? = methodCall.argument("outputType")
+        val display: Boolean? = methodCall.argument("display")
+
+        val res = Api.getEthAddress(chainID!!.toLong(), keypath,outputType!!.toLong(), display!!, byteArrayOf())
         result.success(res)
     }
 }

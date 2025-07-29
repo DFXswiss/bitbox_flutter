@@ -24,6 +24,7 @@ allprojects {
 rootProject.allprojects {
     repositories {
         flatDir {
+//            dirs file('libs')
             dirs project(':bitbox_flutter').file('libs')
         }
     }

@@ -7,14 +7,11 @@ import android.hardware.usb.UsbManager
 import api.GoDeviceInfoInterface
 import api.GoReadWriteCloserInterface
 
-class GoDeviceInfo(private val device: UsbDevice?, var usbManager: UsbManager) : GoDeviceInfoInterface {
-    override fun identifier(): String {
-        return "androidDevice"
-    }
+class GoDeviceInfo(private val device: UsbDevice?, var usbManager: UsbManager) :
+    GoDeviceInfoInterface {
+    override fun identifier(): String = "androidDevice"
 
-    override fun interface_(): Long {
-        return 0
-    }
+    override fun interface_(): Long = 0
 
     @Throws(Exception::class)
     override fun open(): GoReadWriteCloserInterface? {
@@ -58,31 +55,17 @@ class GoDeviceInfo(private val device: UsbDevice?, var usbManager: UsbManager) :
         throw Exception("nope")
     }
 
-    override fun isBluetooth(): Boolean {
-        return false
-    }
+    override fun isBluetooth(): Boolean = false
 
-    override fun product(): String? {
-        return device!!.productName
-    }
+    override fun product(): String? = device!!.productName
 
-    fun manufacturer(): String? {
-        return device!!.manufacturerName
-    }
+    fun manufacturer(): String? = device!!.manufacturerName
 
-    override fun productID(): Long {
-        return device!!.productId.toLong()
-    }
+    override fun productID(): Long = device!!.productId.toLong()
 
-    override fun serial(): String? {
-        return device!!.serialNumber
-    }
+    override fun serial(): String? = device!!.serialNumber
 
-    override fun usagePage(): Long {
-        return 0xFFFF
-    }
+    override fun usagePage(): Long = 0xFFFF
 
-    override fun vendorID(): Long {
-        return device!!.vendorId.toLong()
-    }
+    override fun vendorID(): Long = device!!.vendorId.toLong()
 }

@@ -46,8 +46,9 @@ class _MyAppState extends State<MyApp> {
   Future<void> onPressDevice(UsbDevice usbDevice) async {
     await _bitboxFlutterPlugin.connect(usbDevice);
     print("Connected!");
-    await LedgerUsbPlatform.instance.initBitBox();
 
+    await LedgerUsbPlatform.instance.initBitBox();
+    await LedgerUsbPlatform.instance.channelHashVerify();
     final ltc = await _bitboxFlutterPlugin.supportsLTC();
     final eth = await _bitboxFlutterPlugin.supportsETH(1);
     final base = await _bitboxFlutterPlugin.supportsETH(8453);
@@ -55,6 +56,9 @@ class _MyAppState extends State<MyApp> {
     final usdc = await _bitboxFlutterPlugin.supportsERC20("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
 
     print("LTC: $ltc\nETH: $eth\nBASE: $base\ndEURO: $deuro\nUSDC: $usdc");
+
+    final address = await _bitboxFlutterPlugin.getETHAddress(1, "m/44'/60'/0'/0/0");
+    print(address);
   }
 
   @override
@@ -86,6 +90,7 @@ class _MyAppState extends State<MyApp> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
+                    Image.asset("assets/bitbox.png", width: 50,),
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.only(left: 16),

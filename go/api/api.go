@@ -1,7 +1,11 @@
 package api
 
 import (
+	"encoding/binary"
+	"encoding/hex"
+	"fmt"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
+	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/messages"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/mocks"
 	"github.com/BitBoxSwiss/bitbox02-api-go/communication/u2fhid"
 	"io"
@@ -111,6 +115,10 @@ func GetChannelHash() string {
 	return hash
 }
 
+func ChannelHashVerify(ok bool) {
+	bitbox.ChannelHashVerify(ok)
+}
+
 func InitDevice() {
 	err := bitbox.Init()
 	if err != nil {
@@ -137,4 +145,35 @@ func SupportsERC20(contractAddress string) bool {
 func DeviceInfo() firmware.DeviceInfo {
 	info, _ := bitbox.DeviceInfo()
 	return *info
+}
+
+func GetEthAddress(chainId int, keypath string, outputType int, display bool, contractAddress []byte) string {
+	keypathData, err := hexToUint32Slice(keypath)
+	if err != nil {
+		panic(err)
+	}
+
+	pub, err := bitbox.ETHPub(uint64(chainId), keypathData, messages.ETHPubRequest_OutputType(outputType), display, contractAddress)
+	if err != nil {
+		panic(err)
+	}
+	return pub
+}
+
+func hexToUint32Slice(hexStr string) ([]uint32, error) {
+	bytes, err := hex.DecodeString(hexStr)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding the hex string: %v", err)
+	}
+
+	if len(bytes)%4 != 0 {
+		return nil, fmt.Errorf("Byte-Länge muss durch 4 teilbar sein für uint32")
+	}
+
+	result := make([]uint32, len(bytes)/4)
+	for i := 0; i < len(bytes); i += 4 {
+		result[i/4] = binary.BigEndian.Uint32(bytes[i : i+4])
+	}
+
+	return result, nil
 }

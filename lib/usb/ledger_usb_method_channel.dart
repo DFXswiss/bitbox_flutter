@@ -1,4 +1,5 @@
 import 'package:bitbox_flutter/usb/usb_device.dart';
+import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -75,6 +76,13 @@ class MethodChannelLedgerUsb extends LedgerUsbPlatform {
   }
 
   @override
+  Future<bool> channelHashVerify() async {
+    final result = await methodChannel.invokeMethod<bool>('channelHashVerify');
+
+    return result ?? false;
+  }
+
+  @override
   Future<String> getChannelHash() async {
     final result = await methodChannel.invokeMethod<String>('getChannelHash');
 
@@ -104,5 +112,17 @@ class MethodChannelLedgerUsb extends LedgerUsbPlatform {
     final result = await methodChannel.invokeMethod<bool>('supportsLTC');
 
     return result ?? false;
+  }
+
+  @override
+  Future<String> getETHAddress(int chainId, Uint8List keypath, int outputType, bool display) async {
+    final result = await methodChannel.invokeMethod<String>('getETHAddress', {
+      'chainId': chainId,
+      'keypath': hex.encode(keypath),
+      'outputType': outputType,
+      'display': display
+    });
+
+    return result ?? '';
   }
 }

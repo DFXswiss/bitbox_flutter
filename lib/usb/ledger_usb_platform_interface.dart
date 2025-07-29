@@ -42,11 +42,15 @@ abstract class LedgerUsbPlatform extends PlatformInterface {
 
   Future<String> getChannelHash();
 
+  Future<bool> channelHashVerify();
+
   Future<bool> supportsETH(int chainId);
 
   Future<bool> supportsERC20(String contractAddress);
 
   Future<bool> supportsLTC();
+
+  Future<String> getETHAddress(int chainId, Uint8List keypath, int outputType, bool display);
 
   Future<bool> close();
 }

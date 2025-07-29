@@ -6,9 +6,7 @@ import com.cakewallet.bitbox_flutter.BitboxManager
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
-class SupportsERC20Operation(private val manager: BitboxManager) : UsbMethodCallOperation(
-    manager.usbManager
-) {
+class SupportsERC20Operation(manager: BitboxManager) : UsbMethodCallOperation(manager.usbManager) {
     override fun onMethodCall(
         context: Context,
         methodCall: MethodCall,

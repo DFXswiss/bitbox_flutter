@@ -6,9 +6,7 @@ import com.cakewallet.bitbox_flutter.BitboxManager
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
-class SupportsLTCOperation(private val manager: BitboxManager) : UsbMethodCallOperation(
-    manager.usbManager
-) {
+class SupportsLTCOperation(manager: BitboxManager) : UsbMethodCallOperation(manager.usbManager) {
     override fun onMethodCall(
         context: Context,
         methodCall: MethodCall,

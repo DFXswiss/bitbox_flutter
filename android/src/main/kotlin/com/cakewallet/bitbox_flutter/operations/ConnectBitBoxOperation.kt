@@ -1,14 +1,13 @@
 package com.cakewallet.bitbox_flutter.operations
 
 import android.content.Context
-import com.cakewallet.bitbox_flutter.LedgerException
+import com.cakewallet.bitbox_flutter.BitBoxException
 import com.cakewallet.bitbox_flutter.BitboxManager
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
-class ConnectBitBoxOperation(private val manager: BitboxManager) : UsbMethodCallOperation(
-    manager.usbManager
-) {
+class ConnectBitBoxOperation(private val manager: BitboxManager) :
+    UsbMethodCallOperation(manager.usbManager) {
     override fun onMethodCall(
         context: Context,
         methodCall: MethodCall,
@@ -18,7 +17,7 @@ class ConnectBitBoxOperation(private val manager: BitboxManager) : UsbMethodCall
         try {
             this.manager.connectBitBox(identifier!!)
             result.success(true)
-        } catch (ex: LedgerException) {
+        } catch (ex: BitBoxException) {
             this.manager.gracefullyReset()
             result.error(ex.getErrorCode(), ex.message, null)
         }
