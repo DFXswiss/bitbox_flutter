@@ -1,28 +1,20 @@
-import 'dart:math';
 import 'dart:typed_data';
 
 
 import 'package:bitbox_flutter/usb/src/usb_packer.dart';
 import 'package:bitbox_flutter/usb/usb_device.dart';
 
-import 'ledger_usb_platform_interface.dart';
+import 'bitbox_usb_platform_interface.dart';
 
-///
-/// DOCS: https://developers.ledger.com/docs/transport/web-hid-usb/
-/// WEB USB: https://github.com/LedgerHQ/ledger-live/blob/develop/libs/ledgerjs/packages/hw-transport-webusb/src/TransportWebUSB.ts
-/// HID Framing: https://github.com/LedgerHQ/ledger-live/blob/develop/libs/ledgerjs/packages/devices/src/hid-framing.ts
-class LedgerUsb {
-  Future<List<UsbDevice>> listDevices() {
-    return LedgerUsbPlatform.instance.getDevices();
-  }
+class BitboxUsb {
+  Future<List<UsbDevice>> listDevices() =>
+      BitboxUsbPlatform.instance.getDevices();
 
-  Future<bool> requestPermission(UsbDevice usbDevice) {
-    return LedgerUsbPlatform.instance.requestPermission(usbDevice);
-  }
+  Future<bool> requestPermission(UsbDevice usbDevice) =>
+      BitboxUsbPlatform.instance.requestPermission(usbDevice);
 
-  Future<bool> open(UsbDevice usbDevice) {
-    return LedgerUsbPlatform.instance.open(usbDevice);
-  }
+  Future<bool> open(UsbDevice usbDevice) =>
+      BitboxUsbPlatform.instance.open(usbDevice);
 
   Future<List<Uint8List>> exchange(
     List<Uint8List> apdus, {
@@ -35,17 +27,17 @@ class LedgerUsb {
     final channel = 0xff000000;
     const packetSize = 64;
 
-    for (var apdu in apdus) {
+    for (final apdu in apdus) {
       final blocks = await packer.pack(apdu, channel, packetSize);
 
-      for (var block in blocks) {
-        await LedgerUsbPlatform.instance.transferOut(block, timeout);
+      for (final block in blocks) {
+        await BitboxUsbPlatform.instance.transferOut(block, timeout);
       }
 
       ResponseAcc? acc;
       while (packer.getReducedResult(acc) == null) {
         final response =
-            await LedgerUsbPlatform.instance.transferIn(packetSize, timeout);
+            await BitboxUsbPlatform.instance.transferIn(packetSize, timeout);
         if (response != null && response.isNotEmpty) {
           acc = packer.reduceResponse(acc, channel, response);
         }
@@ -59,7 +51,7 @@ class LedgerUsb {
   }
 
   Future<bool> close() {
-    return LedgerUsbPlatform.instance.close();
+    return BitboxUsbPlatform.instance.close();
   }
 }
 

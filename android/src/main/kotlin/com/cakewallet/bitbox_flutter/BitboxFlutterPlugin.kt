@@ -2,12 +2,17 @@ package com.cakewallet.bitbox_flutter
 
 import android.content.Context
 import android.hardware.usb.UsbManager
+import com.cakewallet.bitbox_flutter.operations.BTCGetXPUBOperation
 import com.cakewallet.bitbox_flutter.operations.ChannelHashVerifyOperation
 import com.cakewallet.bitbox_flutter.operations.CloseOperation
 import com.cakewallet.bitbox_flutter.operations.ConnectBitBoxOperation
+import com.cakewallet.bitbox_flutter.operations.ETHSignEIP1559Operation
+import com.cakewallet.bitbox_flutter.operations.ETHSignMessageOperation
+import com.cakewallet.bitbox_flutter.operations.ETHSignTransactionOperation
+import com.cakewallet.bitbox_flutter.operations.ETHSignTypedMessageOperation
 import com.cakewallet.bitbox_flutter.operations.GetChannelHashOperation
 import com.cakewallet.bitbox_flutter.operations.GetDevicesOperation
-import com.cakewallet.bitbox_flutter.operations.GetETHAddressOperation
+import com.cakewallet.bitbox_flutter.operations.ETHGetAddressOperation
 import com.cakewallet.bitbox_flutter.operations.InitBitBoxOperation
 import com.cakewallet.bitbox_flutter.operations.RequestPermissionOperation
 import com.cakewallet.bitbox_flutter.operations.SupportsETHOperation
@@ -46,7 +51,13 @@ class BitboxFlutterPlugin : FlutterPlugin, MethodCallHandler {
         registry.registerMethodCall("supportsERC20", SupportsERC20Operation(bitboxManager))
         registry.registerMethodCall("supportsLTC", SupportsLTCOperation(bitboxManager))
 
-        registry.registerMethodCall("getETHAddress", GetETHAddressOperation(bitboxManager))
+        registry.registerMethodCall("getBTCXPub", BTCGetXPUBOperation(bitboxManager))
+
+        registry.registerMethodCall("getETHAddress", ETHGetAddressOperation(bitboxManager))
+        registry.registerMethodCall("signETHTransaction", ETHSignTransactionOperation(bitboxManager))
+        registry.registerMethodCall("signETHTransactionEIP1559", ETHSignEIP1559Operation(bitboxManager))
+        registry.registerMethodCall("signETHMessage", ETHSignMessageOperation(bitboxManager))
+        registry.registerMethodCall("signETHTypedMessage", ETHSignTypedMessageOperation(bitboxManager))
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {

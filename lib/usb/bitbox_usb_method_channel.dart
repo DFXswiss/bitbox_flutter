@@ -1,0 +1,240 @@
+import 'package:bitbox_flutter/usb/usb_device.dart';
+import 'package:convert/convert.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+
+import 'bitbox_usb_platform_interface.dart';
+
+BitboxUsbPlatform createPlatformInstance() => MethodChannelBitboxUsb();
+
+/// An implementation of [BitboxUsbPlatform] that uses method channels.
+class MethodChannelBitboxUsb extends BitboxUsbPlatform {
+  /// The method channel used to interact with the native platform.
+  @visibleForTesting
+  final methodChannel = const MethodChannel('ledger_usb');
+
+  @override
+  Future<List<UsbDevice>> getDevices() async {
+    final devices =
+        (await methodChannel.invokeMethod<List<dynamic>>('getDevices')) ?? [];
+
+    return devices.map((device) => UsbDevice.fromMap(device)).toList();
+  }
+
+  @override
+  Future<bool> requestPermission(UsbDevice usbDevice) async {
+    final granted = await methodChannel.invokeMethod<bool>(
+      'requestPermission',
+      usbDevice.toMap(),
+    );
+
+    return granted ?? false;
+  }
+
+  @override
+  Future<bool> open(UsbDevice usbDevice) async {
+    final open = await methodChannel.invokeMethod<bool>(
+      'open',
+      usbDevice.toMap(),
+    );
+
+    return open ?? false;
+  }
+
+  @override
+  Future<bool> close() async {
+    final closed = await methodChannel.invokeMethod<bool>('close');
+
+    return closed ?? false;
+  }
+
+  @override
+  Future<Uint8List?> transferIn(int packetSize, int timeout) async {
+    final data = await methodChannel.invokeMethod<Uint8List?>('transferIn', {
+      'length': packetSize,
+      'timeout': timeout,
+    });
+
+    return data;
+  }
+
+  @override
+  Future<int> transferOut(Uint8List data, int timeout) async {
+    final length = await methodChannel.invokeMethod<int>('transferOut', {
+      'data': data,
+      'timeout': timeout,
+    });
+
+    return length ?? -1;
+  }
+
+  @override
+  Future<bool> initBitBox() async {
+    final result = await methodChannel.invokeMethod<bool>('initBitBox');
+
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> channelHashVerify() async {
+    final result = await methodChannel.invokeMethod<bool>('channelHashVerify');
+
+    return result ?? false;
+  }
+
+  @override
+  Future<String> getChannelHash() async {
+    final result = await methodChannel.invokeMethod<String>('getChannelHash');
+
+    return result ?? '';
+  }
+
+  @override
+  Future<bool> supportsETH(int chainId) async {
+    final result = await methodChannel.invokeMethod<bool>('supportsETH', {
+      'chainId': chainId,
+    });
+
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> supportsERC20(String contractAddress) async {
+    final result = await methodChannel.invokeMethod<bool>('supportsERC20', {
+      'contractAddress': contractAddress,
+    });
+
+    return result ?? false;
+  }
+
+  @override
+  Future<bool> supportsLTC() async {
+    final result = await methodChannel.invokeMethod<bool>('supportsLTC');
+
+    return result ?? false;
+  }
+
+  @override
+  Future<String> getBTCXPub(
+    int coinType,
+    Uint8List keypath,
+    int addressType,
+    bool display,
+  ) async {
+    final result = await methodChannel.invokeMethod<String>('getBTCXPub', {
+      'coinType': coinType,
+      'keypath': hex.encode(keypath),
+      'addressType': addressType,
+      'display': display,
+    });
+
+    return result ?? '';
+  }
+
+  @override
+  Future<String> getETHAddress(
+    int chainId,
+    Uint8List keypath,
+    int outputType,
+    bool display,
+  ) async {
+    final result = await methodChannel.invokeMethod<String>('getETHAddress', {
+      'chainId': chainId,
+      'keypath': hex.encode(keypath),
+      'outputType': outputType,
+      'display': display,
+    });
+
+    return result ?? '';
+  }
+
+  @override
+  Future<Uint8List> signETHTransaction(
+    int chainId,
+    Uint8List keypath,
+    int nonce,
+    String gasPrice,
+    int gasLimit,
+    Uint8List recipient,
+    String value,
+    Uint8List data,
+    int recipientAddressCase,
+  ) async {
+    final result = await methodChannel
+        .invokeMethod<Uint8List>('signETHTransaction', {
+          'chainId': chainId,
+          'keypath': hex.encode(keypath),
+          'nonce': nonce,
+          'gasPrice': gasPrice,
+          'gasLimit': gasLimit,
+          'recipient': recipient,
+          'value': value,
+          'data': data,
+          'recipientAddressCase': recipientAddressCase,
+        });
+
+    return result ?? Uint8List(0);
+  }
+
+  @override
+  Future<Uint8List> signETHTransactionEIP1559(
+    int chainId,
+    Uint8List keypath,
+    int nonce,
+    String maxPriorityFeePerGas,
+    String maxFeePerGas,
+    int gasLimit,
+    Uint8List recipient,
+    String value,
+    Uint8List data,
+    int recipientAddressCase,
+  ) async {
+    final result = await methodChannel
+        .invokeMethod<Uint8List>('signETHTransactionEIP1559', {
+          'chainId': chainId,
+          'keypath': hex.encode(keypath),
+          'nonce': nonce,
+          'maxPriorityFeePerGas': maxPriorityFeePerGas,
+          'maxFeePerGas': maxFeePerGas,
+          'gasLimit': gasLimit,
+          'recipient': recipient,
+          'value': value,
+          'data': data,
+          'recipientAddressCase': recipientAddressCase,
+        });
+
+    return result ?? Uint8List(0);
+  }
+
+  @override
+  Future<Uint8List> signETHMessage(
+    int chainId,
+    Uint8List keypath,
+    Uint8List message,
+  ) async {
+    final result = await methodChannel.invokeMethod<Uint8List>(
+      'signETHMessage',
+      {'chainId': chainId, 'keypath': hex.encode(keypath), 'message': message},
+    );
+
+    return result ?? Uint8List(0);
+  }
+
+  @override
+  Future<Uint8List> signETHTypedMessage(
+    int chainId,
+    Uint8List keypath,
+    Uint8List jsonMessage,
+  ) async {
+    final result = await methodChannel.invokeMethod<Uint8List>(
+      'signETHTypedMessage',
+      {
+        'chainId': chainId,
+        'keypath': hex.encode(keypath),
+        'jsonMessage': jsonMessage,
+      },
+    );
+
+    return result ?? Uint8List(0);
+  }
+}

@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:bitbox_flutter/usb/ledger_usb.dart';
+import 'package:bitbox_flutter/usb/bitbox_usb.dart';
 
 import 'buffer.dart';
 

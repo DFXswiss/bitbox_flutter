@@ -1,12 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ffi';
+import 'dart:typed_data';
 
 import 'package:bitbox_flutter/bitbox_usb_manager.dart';
-import 'package:bitbox_flutter/usb/ledger_usb_platform_interface.dart';
+import 'package:bitbox_flutter/usb/bitbox_usb_platform_interface.dart';
 import 'package:bitbox_flutter/usb/usb_device.dart';
+import 'package:bitbox_flutter_example/widgets/bitbox_device_card.dart';
+import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
 
 void main() {
   runApp(const MyApp());
@@ -23,6 +25,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   List<UsbDevice> _devices = [];
+  UsbDevice? _connectedDevice;
   final _bitboxFlutterPlugin = LedgerUsbManager();
 
   @override
@@ -38,26 +41,33 @@ class _MyAppState extends State<MyApp> {
 
     setState(() {
       _devices = device;
+      _connectedDevice = null;
     });
   }
 
-
-
   Future<void> onPressDevice(UsbDevice usbDevice) async {
     await _bitboxFlutterPlugin.connect(usbDevice);
+    setState(() => _connectedDevice = usbDevice);
     print("Connected!");
 
-    await LedgerUsbPlatform.instance.initBitBox();
-    await LedgerUsbPlatform.instance.channelHashVerify();
+    await BitboxUsbPlatform.instance.initBitBox();
+    await BitboxUsbPlatform.instance.channelHashVerify();
     final ltc = await _bitboxFlutterPlugin.supportsLTC();
     final eth = await _bitboxFlutterPlugin.supportsETH(1);
     final base = await _bitboxFlutterPlugin.supportsETH(8453);
-    final deuro = await _bitboxFlutterPlugin.supportsERC20("0xbA3f535bbCcCcA2A154b573Ca6c5A49BAAE0a3ea");
-    final usdc = await _bitboxFlutterPlugin.supportsERC20("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+    final deuro = await _bitboxFlutterPlugin.supportsERC20(
+      "0xbA3f535bbCcCcA2A154b573Ca6c5A49BAAE0a3ea",
+    );
+    final usdc = await _bitboxFlutterPlugin.supportsERC20(
+      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    );
 
     print("LTC: $ltc\nETH: $eth\nBASE: $base\ndEURO: $deuro\nUSDC: $usdc");
 
-    final address = await _bitboxFlutterPlugin.getETHAddress(1, "m/44'/60'/0'/0/0");
+    final address = await _bitboxFlutterPlugin.getETHAddress(
+      1,
+      "m/44'/60'/0'/0/0",
+    );
     print(address);
   }
 
@@ -65,53 +75,169 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
     home: Scaffold(
-      appBar: AppBar(title: const Text('BitBox'),
-      actions: [
-        IconButton(onPressed: initPlatformState, icon: Icon(Icons.refresh))
-      ],
+      appBar: AppBar(
+        title: const Text('BitBox'),
+        actions: [
+          IconButton(onPressed: initPlatformState, icon: Icon(Icons.refresh)),
+        ],
       ),
-      body: Center(
-        child: ListView.builder(
-          itemCount: _devices.length,
-          itemBuilder: (context, i) {
-            final device = _devices[i];
-            return GestureDetector(
-              onTap: () => onPressDevice(device),
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(24),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                  color: Theme.of(context).colorScheme.surfaceContainer,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    Image.asset("assets/bitbox.png", width: 50,),
-                    Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(left: 16),
-                        child: Text(
-                          device.productName,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium!.copyWith(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+      body:
+          _connectedDevice != null
+              ? BitboxScreen(
+                usbDevice: _connectedDevice!,
+                usbManager: _bitboxFlutterPlugin,
+              )
+              : Center(
+                child: ListView.builder(
+                  itemCount: _devices.length,
+                  itemBuilder: (context, i) {
+                    final device = _devices[i];
+                    return GestureDetector(
+                      onTap: () => onPressDevice(device),
+                      child: BitboxDeviceCard(device: device),
+                    );
+                  },
                 ),
               ),
-            );
-          },
-        ),
-      ),
     ),
   );
+}
+
+class BitboxScreen extends StatefulWidget {
+  final UsbDevice usbDevice;
+  final LedgerUsbManager usbManager;
+
+  const BitboxScreen({
+    super.key,
+    required this.usbDevice,
+    required this.usbManager,
+  });
+
+  @override
+  State<StatefulWidget> createState() => _BitboxScreenState();
+}
+
+class _BitboxScreenState extends State<BitboxScreen> {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      BitboxDeviceCard(device: widget.usbDevice),
+      ExpansionTile(
+        title: const Text('Bitcoin'),
+        children: <Widget>[
+          MaterialButton(
+            onPressed: () async {
+              final address = await widget.usbManager.getBTCXPub(
+                0,
+                "m/84'/0'/0'",
+                1,
+              );
+              print(address);
+            },
+            child: const Text("Get BTC XPub"),
+          ),
+        ],
+      ),
+      ExpansionTile(
+        title: const Text('Ethereum'),
+        children: <Widget>[
+          MaterialButton(
+            onPressed: () async {
+              final address = await widget.usbManager.getETHAddress(
+                1,
+                "m/44'/60'/0'/0/0",
+              );
+              print(address);
+            },
+            child: const Text("Get ETH Address"),
+          ),
+          MaterialButton(
+            onPressed: () async {
+              final sig = await widget.usbManager.signETHMessage(
+                1,
+                "m/44'/60'/0'/0/0",
+                utf8.encode("Hey Bitbox"),
+              );
+              print(sig);
+            },
+            child: const Text("Sign Message 'Hey Bitbox'"),
+          ),
+          MaterialButton(
+            onPressed: () async {
+              final sig = await widget.usbManager.signETHTypedMessage(
+                1,
+                "m/44'/60'/0'/0/0",
+                utf8.encode(
+                  '{"types":{"EIP712Domain":[{"name":"name","type":"string"},{"name":"version","type":"string"},{"name":"chainId","type":"uint256"},{"name":"verifyingContract","type":"address"}],"Person":[{"name":"name","type":"string"},{"name":"wallet","type":"address"}],"Mail":[{"name":"from","type":"Person"},{"name":"to","type":"Person"},{"name":"contents","type":"string"}]},"primaryType":"Mail","domain":{"name":"Ether Mail","version":"1","chainId":1,"verifyingContract":"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"},"message":{"from":{"name":"Cow","wallet":"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826"},"to":{"name":"Bob","wallet":"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB"},"contents":"Hello, Bob!"}}',
+                ),
+              );
+              print(sig);
+            },
+            child: const Text("Sign Typed Message"),
+          ),
+          MaterialButton(
+            onPressed: () async {
+              final sig = await widget.usbManager.signETHTypedMessage(
+                1,
+                "m/44'/60'/0'/0/0",
+                utf8.encode(
+                  '{"types":{"EIP712Domain":[{"name":"name","type":"string"},{"name":"version","type":"string"},{"name":"chainId","type":"uint256"},{"name":"verifyingContract","type":"address"}],"Person":[{"name":"name","type":"string"},{"name":"wallet","type":"address"}],"Mail":[{"name":"from","type":"Person"},{"name":"to","type":"Person"},{"name":"contents","type":"string"}]},"primaryType":"Mail","domain":{"name":"Ether Mail","version":"1","chainId":1,"verifyingContract":"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"},"message":{"from":{"name":"Cow","wallet":"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826"},"to":{"name":"Bob","wallet":"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB"},"contents":"Hello, Bob!"}}',
+                ),
+              );
+              print(sig);
+            },
+            child: const Text("Sign Typed Message"),
+          ),
+          MaterialButton(
+            onPressed: () async {
+              final sig = await widget.usbManager.signETHTransaction(
+                1,
+                "m/44'/60'/0'/0/0",
+                1,
+                BigInt.from(100000000),
+                1000,
+                hexToBytes("0xCf99569890771d869BfC28C776D07F59b0636D72"),
+                BigInt.parse("1000000000000000000"),
+                Uint8List(0),
+                0,
+              );
+              print(sig);
+            },
+            child: const Text("Sign Transaction"),
+          ),
+          MaterialButton(
+            onPressed: () async {
+              final sig = await widget.usbManager.signETHTransactionEIP1559(
+                1,
+                "m/44'/60'/0'/0/0",
+                1,
+                BigInt.from(1),
+                BigInt.from(10000000000),
+                1000,
+                hexToBytes("0xCf99569890771d869BfC28C776D07F59b0636D72"),
+                BigInt.parse("1000000000000000000"),
+                Uint8List(0),
+                0,
+              );
+              print(sig);
+            },
+            child: const Text("Sign EIP1559 Transaction"),
+          ),
+        ],
+      ),
+
+    ],
+  );
+}
+
+String strip0x(String hex) {
+  if (hex.startsWith('0x')) return hex.substring(2);
+  return hex;
+}
+
+Uint8List hexToBytes(String hexStr) {
+  final bytes = hex.decode(strip0x(hexStr));
+  if (bytes is Uint8List) return bytes;
+
+  return Uint8List.fromList(bytes);
 }
