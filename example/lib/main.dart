@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:bitbox_flutter/bitbox_usb_manager.dart';
+import 'package:bitbox_flutter/bitbox_manager.dart';
 import 'package:bitbox_flutter/usb/bitbox_usb_platform_interface.dart';
 import 'package:bitbox_flutter/usb/usb_device.dart';
 import 'package:bitbox_flutter_example/widgets/bitbox_device_card.dart';
@@ -26,7 +26,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   List<UsbDevice> _devices = [];
   UsbDevice? _connectedDevice;
-  final _bitboxFlutterPlugin = LedgerUsbManager();
+  final _bitboxFlutterPlugin = BitboxManager();
 
   @override
   void initState() {
@@ -105,7 +105,7 @@ class _MyAppState extends State<MyApp> {
 
 class BitboxScreen extends StatefulWidget {
   final UsbDevice usbDevice;
-  final LedgerUsbManager usbManager;
+  final BitboxManager usbManager;
 
   const BitboxScreen({
     super.key,

@@ -1,4 +1,1 @@
-
-class BitboxFlutter {
-
-}
+export 'bitbox_manager.dart';

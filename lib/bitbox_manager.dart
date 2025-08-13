@@ -7,12 +7,10 @@ import 'package:bitbox_flutter/usb/src/bip32_path_to_buffer.dart';
 import 'package:bitbox_flutter/usb/usb_device.dart';
 import 'package:flutter/services.dart';
 
-class LedgerUsbManager {
+class BitboxManager {
   bool _disposed = false;
 
   final _bitboxUsb = BitboxUsb();
-
-  LedgerUsbManager();
 
   Future<void> connect(UsbDevice usbDevice) async {
     if (_disposed) throw Exception("Is disposed");
