@@ -106,6 +106,7 @@ func (d deviceInfo) Open() (io.ReadWriteCloser, error) {
 
 var bitbox *firmware.Device
 
+//export GetDevice
 func GetDevice(device GoReadWriteCloserInterface) {
 	const bitboxCMD = 0x80 + 0x40 + 0x01
 	comm := u2fhid.NewCommunication(readWriteCloser{device}, bitboxCMD)
@@ -118,10 +119,12 @@ func GetChannelHash() string {
 	return hash
 }
 
+//export ChannelHashVerify
 func ChannelHashVerify(ok bool) {
 	bitbox.ChannelHashVerify(ok)
 }
 
+//export InitDevice
 func InitDevice() {
 	err := bitbox.Init()
 	if err != nil {
@@ -129,27 +132,33 @@ func InitDevice() {
 	}
 }
 
+//export SupportsETH
 func SupportsETH(chainId int) bool {
 	return bitbox.SupportsETH(uint64(chainId))
 }
 
+//export SupportsLTC
 func SupportsLTC() bool {
 	return bitbox.SupportsLTC()
 }
 
+//export SupportsBluetooth
 func SupportsBluetooth() bool {
 	return bitbox.SupportsBluetooth()
 }
 
+//export SupportsERC20
 func SupportsERC20(contractAddress string) bool {
 	return bitbox.SupportsERC20(contractAddress)
 }
 
+//export DeviceInfo
 func DeviceInfo() firmware.DeviceInfo {
 	info, _ := bitbox.DeviceInfo()
 	return *info
 }
 
+//export ETHGetAddress
 func ETHGetAddress(chainId int, keypath string, outputType int, display bool, contractAddress []byte) string {
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
@@ -163,6 +172,7 @@ func ETHGetAddress(chainId int, keypath string, outputType int, display bool, co
 	return pub
 }
 
+//export ETHSignTransaction
 func ETHSignTransaction(chainId int, keypath string, nonce int, gasPrice string, gasLimit int, recipient []byte, value string, data []byte, recipientAddressCase int) []byte {
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
@@ -182,6 +192,7 @@ func ETHSignTransaction(chainId int, keypath string, nonce int, gasPrice string,
 	return signature
 }
 
+//export ETHSignEIP1559
 func ETHSignEIP1559(chainId int, keypath string, nonce int, maxPriorityFeePerGas string, maxFeePerGas string, gasLimit int, recipient []byte, value string, data []byte, recipientAddressCase int) []byte {
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
@@ -205,6 +216,7 @@ func ETHSignEIP1559(chainId int, keypath string, nonce int, maxPriorityFeePerGas
 	return signature
 }
 
+//export ETHSignMessage
 func ETHSignMessage(chainId int, keypath string, msg []byte) []byte {
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
@@ -218,6 +230,7 @@ func ETHSignMessage(chainId int, keypath string, msg []byte) []byte {
 	return signature
 }
 
+//export ETHSignTypedMessage
 func ETHSignTypedMessage(chainId int, keypath string, jsonMsg []byte) []byte {
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
@@ -232,6 +245,7 @@ func ETHSignTypedMessage(chainId int, keypath string, jsonMsg []byte) []byte {
 	return signature
 }
 
+//export BTCXPub
 func BTCXPub(coinType int, keypath string, addressType int, display bool) string {
 	keypathData, _ := hexToUint32Slice(keypath)
 
