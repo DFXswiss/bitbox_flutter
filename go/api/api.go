@@ -112,6 +112,7 @@ func GetDevice(device GoReadWriteCloserInterface) {
 	bitbox = firmware.NewDevice(nil, nil, &mocks.Config{}, comm, &mocks.Logger{})
 }
 
+//export GetChannelHash
 func GetChannelHash() string {
 	hash, _ := bitbox.ChannelHash()
 	return hash
@@ -237,6 +238,12 @@ func BTCXPub(coinType int, keypath string, addressType int, display bool) string
 	pub, _ := bitbox.BTCXPub(messages.BTCCoin(coinType), keypathData, messages.BTCPubRequest_XPubType(addressType), display)
 	return pub
 }
+
+//func BTCSign(coinType int, keypath string, addressType int, display bool) string {
+//
+//	pub, _ := bitbox.BTCSign(messages.BTCCoin(coinType))
+//	return pub.
+//}
 
 func hexToUint32Slice(hexStr string) ([]uint32, error) {
 	bytes, err := hex.DecodeString(hexStr)
