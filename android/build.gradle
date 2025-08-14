@@ -6,6 +6,7 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+
     }
 
     dependencies {
@@ -21,14 +22,14 @@ allprojects {
     }
 }
 
-rootProject.allprojects {
-    repositories {
-        flatDir {
-//            dirs file('libs')
-            dirs project(':bitbox_flutter').file('libs')
-        }
-    }
-}
+//rootProject.allprojects {
+//    repositories {
+//        flatDir {
+////            dirs file('libs')
+//            dirs project(':bitbox_flutter').file('libs')
+//        }
+//    }
+//}
 
 apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
@@ -57,7 +58,8 @@ android {
     }
 
     dependencies {
-        implementation (name: 'api', ext: 'aar')
+//        implementation (name: 'api', ext: 'aar')
+        implementation project(path: ':api')
 
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")
