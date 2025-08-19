@@ -22,14 +22,14 @@ allprojects {
     }
 }
 
-//rootProject.allprojects {
-//    repositories {
-//        flatDir {
-////            dirs file('libs')
-//            dirs project(':bitbox_flutter').file('libs')
-//        }
-//    }
-//}
+rootProject.allprojects {
+    repositories {
+        flatDir {
+//            dirs file('libs')
+            dirs project(':bitbox_flutter').file('libs')
+        }
+    }
+}
 
 apply plugin: "com.android.library"
 apply plugin: "kotlin-android"

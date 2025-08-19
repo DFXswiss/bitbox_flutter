@@ -4,7 +4,7 @@ import 'package:bitbox_flutter/usb/bitbox_usb.dart';
 import 'package:bitbox_flutter/usb/bitbox_usb_platform_interface.dart';
 import 'package:bitbox_flutter/usb/src/bip32_path_helper.dart';
 import 'package:bitbox_flutter/usb/src/bip32_path_to_buffer.dart';
-import 'package:bitbox_flutter/usb/usb_device.dart';
+import 'package:bitbox_flutter/usb/bitbox_device.dart';
 import 'package:flutter/services.dart';
 
 class BitboxManager {
@@ -12,7 +12,7 @@ class BitboxManager {
 
   final _bitboxUsb = BitboxUsb();
 
-  Future<void> connect(UsbDevice usbDevice) async {
+  Future<void> connect(BitboxDevice usbDevice) async {
     if (_disposed) throw Exception("Is disposed");
 
     await _bitboxUsb.requestPermission(usbDevice);
@@ -23,13 +23,6 @@ class BitboxManager {
     if (_disposed) throw Exception("Is disposed");
 
     await _bitboxUsb.close();
-  }
-
-  Future<List<Uint8List>> sendRawOperation(Uint8List operation) async {
-    if (_disposed) throw Exception("Is disposed");
-
-    final apdus = [operation];
-    return _bitboxUsb.exchange(apdus);
   }
 
   Future<bool> initBitBox() => BitboxUsbPlatform.instance.initBitBox();
@@ -156,7 +149,7 @@ class BitboxManager {
     );
   }
 
-  Future<List<UsbDevice>> get devices async {
+  Future<List<BitboxDevice>> get devices async {
     if (_disposed) throw Exception("Is disposed");
 
     return _bitboxUsb.listDevices();

@@ -1,4 +1,4 @@
-import 'package:bitbox_flutter/usb/usb_device.dart';
+import 'package:bitbox_flutter/usb/bitbox_device.dart';
 import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -14,15 +14,15 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
   final methodChannel = const MethodChannel('ledger_usb');
 
   @override
-  Future<List<UsbDevice>> getDevices() async {
+  Future<List<BitboxDevice>> getDevices() async {
     final devices =
         (await methodChannel.invokeMethod<List<dynamic>>('getDevices')) ?? [];
 
-    return devices.map((device) => UsbDevice.fromMap(device)).toList();
+    return devices.map((device) => BitboxDevice.fromMap(device)).toList();
   }
 
   @override
-  Future<bool> requestPermission(UsbDevice usbDevice) async {
+  Future<bool> requestPermission(BitboxDevice usbDevice) async {
     final granted = await methodChannel.invokeMethod<bool>(
       'requestPermission',
       usbDevice.toMap(),
@@ -32,7 +32,7 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
   }
 
   @override
-  Future<bool> open(UsbDevice usbDevice) async {
+  Future<bool> open(BitboxDevice usbDevice) async {
     final open = await methodChannel.invokeMethod<bool>(
       'open',
       usbDevice.toMap(),

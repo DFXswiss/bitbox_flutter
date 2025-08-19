@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:bitbox_flutter/usb/usb_device.dart';
+import 'package:bitbox_flutter/usb/bitbox_device.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'Bitbox_usb_method_channel.dart'
@@ -28,11 +28,11 @@ abstract class BitboxUsbPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<List<UsbDevice>> getDevices();
+  Future<List<BitboxDevice>> getDevices();
 
-  Future<bool> requestPermission(UsbDevice usbDevice);
+  Future<bool> requestPermission(BitboxDevice usbDevice);
 
-  Future<bool> open(UsbDevice usbDevice);
+  Future<bool> open(BitboxDevice usbDevice);
 
   Future<Uint8List?> transferIn(int packetSize, int timeout);
 

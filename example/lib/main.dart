@@ -5,7 +5,7 @@ import 'dart:typed_data';
 
 import 'package:bitbox_flutter/bitbox_manager.dart';
 import 'package:bitbox_flutter/usb/bitbox_usb_platform_interface.dart';
-import 'package:bitbox_flutter/usb/usb_device.dart';
+import 'package:bitbox_flutter/usb/bitbox_device.dart';
 import 'package:bitbox_flutter_example/widgets/bitbox_device_card.dart';
 import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
@@ -24,8 +24,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  List<UsbDevice> _devices = [];
-  UsbDevice? _connectedDevice;
+  List<BitboxDevice> _devices = [];
+  BitboxDevice? _connectedDevice;
   final _bitboxFlutterPlugin = BitboxManager();
 
   @override
@@ -35,7 +35,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> initPlatformState() async {
-    List<UsbDevice> device;
+    List<BitboxDevice> device;
     device = await _bitboxFlutterPlugin.devices;
     if (!mounted) return;
 
@@ -45,7 +45,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  Future<void> onPressDevice(UsbDevice usbDevice) async {
+  Future<void> onPressDevice(BitboxDevice usbDevice) async {
     await _bitboxFlutterPlugin.connect(usbDevice);
     setState(() => _connectedDevice = usbDevice);
     print("Connected!");
@@ -104,7 +104,7 @@ class _MyAppState extends State<MyApp> {
 }
 
 class BitboxScreen extends StatefulWidget {
-  final UsbDevice usbDevice;
+  final BitboxDevice usbDevice;
   final BitboxManager usbManager;
 
   const BitboxScreen({

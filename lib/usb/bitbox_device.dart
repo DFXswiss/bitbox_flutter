@@ -1,4 +1,4 @@
-class UsbDevice {
+class BitboxDevice {
   final String identifier;
   final int vendorId;
   final int productId;
@@ -8,7 +8,7 @@ class UsbDevice {
   final String manufacturerName;
   final int configurationCount;
 
-  UsbDevice({
+  BitboxDevice({
     required this.identifier,
     required this.vendorId,
     required this.productId,
@@ -19,8 +19,8 @@ class UsbDevice {
     required this.configurationCount,
   });
 
-  factory UsbDevice.fromIdentifier(String identifier) {
-    return UsbDevice(
+  factory BitboxDevice.fromIdentifier(String identifier) {
+    return BitboxDevice(
       identifier: identifier,
       vendorId: 0,
       productId: 0,
@@ -32,8 +32,8 @@ class UsbDevice {
     );
   }
 
-  factory UsbDevice.fromMap(Map<dynamic, dynamic> map) {
-    return UsbDevice(
+  factory BitboxDevice.fromMap(Map<dynamic, dynamic> map) {
+    return BitboxDevice(
       identifier: map['identifier'],
       vendorId: map['vendorId'],
       productId: map['productId'],

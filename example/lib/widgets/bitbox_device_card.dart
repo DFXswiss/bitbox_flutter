@@ -1,8 +1,8 @@
-import 'package:bitbox_flutter/usb/usb_device.dart';
+import 'package:bitbox_flutter/usb/bitbox_device.dart';
 import 'package:flutter/material.dart';
 
 class BitboxDeviceCard extends StatelessWidget {
-  final UsbDevice device;
+  final BitboxDevice device;
 
   const BitboxDeviceCard({super.key, required this.device});
 
