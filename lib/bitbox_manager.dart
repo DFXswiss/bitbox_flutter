@@ -19,7 +19,7 @@ class BitboxManager {
     await _bitboxUsb.open(usbDevice);
   }
 
-  Future<void> disconnect(String deviceId) async {
+  Future<void> disconnect() async {
     if (_disposed) throw Exception("Is disposed");
 
     await _bitboxUsb.close();

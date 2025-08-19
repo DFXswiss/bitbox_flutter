@@ -58,8 +58,7 @@ android {
     }
 
     dependencies {
-//        implementation (name: 'api', ext: 'aar')
-        implementation project(path: ':api')
+        implementation (name: 'api', ext: 'aar')
 
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")

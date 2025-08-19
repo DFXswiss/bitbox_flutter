@@ -8,7 +8,6 @@ import 'Bitbox_usb_method_channel.dart'
     if (dart.library.js_interop) 'web_ledger_usb.dart';
 
 abstract class BitboxUsbPlatform extends PlatformInterface {
-  /// Constructs a LedgerUsbPlatform.
   BitboxUsbPlatform() : super(token: _token);
 
   static final Object _token = Object();
