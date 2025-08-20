@@ -70,6 +70,6 @@ class RequestPermissionOperation(manager: BitboxManager) : UsbMethodCallOperatio
     }
 
     companion object {
-        const val ACTION_USB_PERMISSION: String = "com.cakewalle.bitbox.USB_PERMISSION"
+        const val ACTION_USB_PERMISSION: String = "com.cakewallet.bitbox_flutter.USB_PERMISSION"
     }
 }
