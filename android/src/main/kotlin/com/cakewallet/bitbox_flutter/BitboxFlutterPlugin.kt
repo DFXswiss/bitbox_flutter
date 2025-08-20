@@ -31,7 +31,7 @@ class BitboxFlutterPlugin : FlutterPlugin, MethodCallHandler {
     private lateinit var bitboxManager: BitboxManager
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(binding.getBinaryMessenger(), "ledger_usb")
+        channel = MethodChannel(binding.getBinaryMessenger(), "bitbox_usb")
         channel.setMethodCallHandler(this)
         context = binding.getApplicationContext()
         usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager

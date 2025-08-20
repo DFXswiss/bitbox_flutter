@@ -11,7 +11,7 @@ BitboxUsbPlatform createPlatformInstance() => MethodChannelBitboxUsb();
 class MethodChannelBitboxUsb extends BitboxUsbPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
-  final methodChannel = const MethodChannel('ledger_usb');
+  final methodChannel = const MethodChannel('bitbox_usb');
 
   @override
   Future<List<BitboxDevice>> getDevices() async {
