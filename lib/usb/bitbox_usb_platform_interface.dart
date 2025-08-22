@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'package:bitbox_flutter/usb/bitbox_device.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import 'Bitbox_usb_method_channel.dart'
+import 'bitbox_usb_method_channel.dart'
     if (dart.library.html) 'web_ledger_usb.dart'
     if (dart.library.js) 'web_ledger_usb.dart'
     if (dart.library.js_interop) 'web_ledger_usb.dart';
