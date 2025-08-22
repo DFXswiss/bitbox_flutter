@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -16,6 +17,9 @@ import (
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/messages"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/mocks"
 	"github.com/BitBoxSwiss/bitbox02-api-go/communication/u2fhid"
+	"github.com/btcsuite/btcd/btcutil/psbt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 // fixTimezone sets the local timezone on Android. This is a workaround to the bug that on Android,
@@ -172,6 +176,88 @@ func ETHGetAddress(chainId int, keypath string, outputType int, display bool, co
 	return pub
 }
 
+type dynamicFeeTxPayload struct {
+	ChainID    uint64
+	Nonce      uint64
+	GasTipCap  *big.Int // a.k.a. maxPriorityFeePerGas
+	GasFeeCap  *big.Int // a.k.a. maxFeePerGas
+	Gas        uint64
+	To         *common.Address `rlp:"nil"`
+	Value      *big.Int
+	Data       []byte
+	AccessList any
+
+	// Signature values
+	V *big.Int `rlp:"optional"`
+	R *big.Int `rlp:"optional"`
+	S *big.Int `rlp:"optional"`
+}
+
+type legacyTxPayload struct {
+	Nonce    uint64
+	GasPrice *big.Int
+	Gas      uint64
+	To       *common.Address `rlp:"nil"`
+	Value    *big.Int
+	Data     []byte
+	V, R, S  *big.Int `rlp:"optional"`
+}
+
+//export ETHSignRPLTx
+func ETHSignRPLTx(chainId int, keypath string, encodedTx string, isEIP1559 bool) []byte {
+	keypathData, err := hexToUint32Slice(keypath)
+	if err != nil {
+		panic(err)
+	}
+
+	txEncoded, _ := hex.DecodeString(encodedTx)
+
+	var signature []byte
+	if isEIP1559 {
+		var tx dynamicFeeTxPayload
+		err = rlp.DecodeBytes(txEncoded, &tx)
+		if err != nil {
+			panic(err)
+		}
+
+		signature, err = bitbox.ETHSignEIP1559(
+			uint64(chainId),
+			keypathData,
+			tx.Nonce,
+			tx.GasTipCap,
+			tx.GasFeeCap,
+			tx.Gas,
+			[20]byte(tx.To.Bytes()),
+			tx.Value,
+			tx.Data,
+			firmware.ETHIdentifyCase(tx.To.String()),
+		)
+	} else {
+		var tx legacyTxPayload
+		err = rlp.DecodeBytes(txEncoded, &tx)
+		if err != nil {
+			panic(err)
+		}
+		signature, err = bitbox.ETHSign(
+			uint64(chainId),
+			keypathData,
+			tx.Nonce,
+			tx.GasPrice,
+			tx.Gas,
+			[20]byte(tx.To.Bytes()),
+			tx.Value,
+			tx.Data,
+			firmware.ETHIdentifyCase(tx.To.String()),
+		)
+	}
+
+	if err != nil {
+		panic(err)
+	}
+
+	return signature
+}
+
 //export ETHSignTransaction
 func ETHSignTransaction(chainId int, keypath string, nonce int, gasPrice string, gasLimit int, recipient []byte, value string, data []byte, recipientAddressCase int) []byte {
 	keypathData, err := hexToUint32Slice(keypath)
@@ -251,6 +337,18 @@ func BTCXPub(coinType int, keypath string, addressType int, display bool) string
 
 	pub, _ := bitbox.BTCXPub(messages.BTCCoin(coinType), keypathData, messages.BTCPubRequest_XPubType(addressType), display)
 	return pub
+}
+
+//export BTCSignPSBT
+func BTCSignPSBT(coinType int, psbtStr string) string {
+	psbt_, _ := psbt.NewFromRawBytes(bytes.NewBufferString(psbtStr), true)
+
+	//err := bitbox.BTCSignPSBT(messages.BTCCoin(coinType), psbt_, nil)
+	//if err != nil {
+	//	panic(err)
+	//}
+	psbtStr_, _ := psbt_.B64Encode()
+	return psbtStr_
 }
 
 //func BTCSign(coinType int, keypath string, addressType int, display bool) string {

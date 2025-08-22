@@ -50,7 +50,8 @@ class _MyAppState extends State<MyApp> {
     setState(() => _connectedDevice = usbDevice);
     print("Connected!");
 
-    await BitboxUsbPlatform.instance.initBitBox();
+    await _bitboxFlutterPlugin.initBitBox();
+
     await BitboxUsbPlatform.instance.channelHashVerify();
     final ltc = await _bitboxFlutterPlugin.supportsLTC();
     final eth = await _bitboxFlutterPlugin.supportsETH(1);

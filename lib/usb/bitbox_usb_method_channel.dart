@@ -149,6 +149,20 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
   }
 
   @override
+  Future<Uint8List> signETHRPLTransaction(int chainId, Uint8List keypath,
+      String transactionData, bool isEIP1559) async {
+    final result =
+        await methodChannel.invokeMethod<Uint8List>('signETHRLPTransaction', {
+      'chainId': chainId,
+      'keypath': hex.encode(keypath),
+      'txData': transactionData,
+      'isEIP1559': isEIP1559,
+    });
+
+    return result ?? Uint8List(0);
+  }
+
+  @override
   Future<Uint8List> signETHTransaction(
     int chainId,
     Uint8List keypath,

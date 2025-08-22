@@ -96,6 +96,21 @@ class BitboxManager {
     );
   }
 
+  Future<Uint8List> signETHRLPTransaction(
+    int chainId,
+    String keypath,
+    String transactionData,
+    bool isEIP1559,
+  ) {
+    final bipPath = BIPPath.fromString(keypath);
+    return BitboxUsbPlatform.instance.signETHRPLTransaction(
+      chainId,
+      packDerivationPath(bipPath.toPathArray()),
+      transactionData,
+      isEIP1559,
+    );
+  }
+
   Future<Uint8List> signETHTransactionEIP1559(
     int chainId,
     String keypath,

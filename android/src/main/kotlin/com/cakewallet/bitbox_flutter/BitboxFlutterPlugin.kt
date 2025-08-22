@@ -13,6 +13,7 @@ import com.cakewallet.bitbox_flutter.operations.ETHSignTypedMessageOperation
 import com.cakewallet.bitbox_flutter.operations.GetChannelHashOperation
 import com.cakewallet.bitbox_flutter.operations.GetDevicesOperation
 import com.cakewallet.bitbox_flutter.operations.ETHGetAddressOperation
+import com.cakewallet.bitbox_flutter.operations.ETHSignRLPTransactionOperation
 import com.cakewallet.bitbox_flutter.operations.InitBitBoxOperation
 import com.cakewallet.bitbox_flutter.operations.RequestPermissionOperation
 import com.cakewallet.bitbox_flutter.operations.SupportsETHOperation
@@ -58,6 +59,7 @@ class BitboxFlutterPlugin : FlutterPlugin, MethodCallHandler {
         registry.registerMethodCall("signETHTransactionEIP1559", ETHSignEIP1559Operation(bitboxManager))
         registry.registerMethodCall("signETHMessage", ETHSignMessageOperation(bitboxManager))
         registry.registerMethodCall("signETHTypedMessage", ETHSignTypedMessageOperation(bitboxManager))
+        registry.registerMethodCall("signETHRLPTransaction", ETHSignRLPTransactionOperation(bitboxManager))
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
