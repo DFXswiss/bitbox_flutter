@@ -132,6 +132,17 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
   }
 
   @override
+  Future<String> signBTCPsbt(int coinType, String psbt) async {
+    final result =
+    await methodChannel.invokeMethod<String>('signBTCPsbt', {
+      'coinType': coinType,
+      'psbt': psbt
+    });
+
+    return result ?? "";
+  }
+
+  @override
   Future<String> getETHAddress(
     int chainId,
     Uint8List keypath,

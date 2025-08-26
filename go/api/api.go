@@ -16,10 +16,10 @@ import (
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/messages"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/mocks"
-	"github.com/BitBoxSwiss/bitbox02-api-go/communication/u2fhid"
 	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/konstantinullrich/bitbox_flutter/u2fhid"
 )
 
 // fixTimezone sets the local timezone on Android. This is a workaround to the bug that on Android,
@@ -343,19 +343,13 @@ func BTCXPub(coinType int, keypath string, addressType int, display bool) string
 func BTCSignPSBT(coinType int, psbtStr string) string {
 	psbt_, _ := psbt.NewFromRawBytes(bytes.NewBufferString(psbtStr), true)
 
-	//err := bitbox.BTCSignPSBT(messages.BTCCoin(coinType), psbt_, nil)
-	//if err != nil {
-	//	panic(err)
-	//}
+	err := bitbox.BTCSignPSBT(messages.BTCCoin(coinType), psbt_, nil)
+	if err != nil {
+		panic(err)
+	}
 	psbtStr_, _ := psbt_.B64Encode()
 	return psbtStr_
 }
-
-//func BTCSign(coinType int, keypath string, addressType int, display bool) string {
-//
-//	pub, _ := bitbox.BTCSign(messages.BTCCoin(coinType))
-//	return pub.
-//}
 
 func hexToUint32Slice(hexStr string) ([]uint32, error) {
 	bytes, err := hex.DecodeString(hexStr)
