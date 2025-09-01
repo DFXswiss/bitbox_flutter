@@ -360,6 +360,17 @@ func BTCSignPSBT(coinType int, psbtStr string) string {
 	return psbtStr_
 }
 
+//export GetMasterFingerprint
+func GetMasterFingerprint() []byte {
+	fingerprint, err := bitbox.RootFingerprint()
+
+	if err != nil {
+		return make([]byte, 0)
+	}
+
+	return fingerprint
+}
+
 func hexToUint32Slice(hexStr string) ([]uint32, error) {
 	bytes, err := hex.DecodeString(hexStr)
 	if err != nil {

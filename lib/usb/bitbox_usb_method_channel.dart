@@ -49,26 +49,6 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
   }
 
   @override
-  Future<Uint8List?> transferIn(int packetSize, int timeout) async {
-    final data = await methodChannel.invokeMethod<Uint8List?>('transferIn', {
-      'length': packetSize,
-      'timeout': timeout,
-    });
-
-    return data;
-  }
-
-  @override
-  Future<int> transferOut(Uint8List data, int timeout) async {
-    final length = await methodChannel.invokeMethod<int>('transferOut', {
-      'data': data,
-      'timeout': timeout,
-    });
-
-    return length ?? -1;
-  }
-
-  @override
   Future<bool> initBitBox() async {
     final result = await methodChannel.invokeMethod<bool>('initBitBox');
 
@@ -87,6 +67,13 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
     final result = await methodChannel.invokeMethod<String>('getChannelHash');
 
     return result ?? '';
+  }
+
+  @override
+  Future<Uint8List> getMasterFingerprint() async {
+    final result = await methodChannel.invokeMethod<Uint8List>('getMasterFingerprint');
+
+    return result ?? Uint8List(0);
   }
 
   @override

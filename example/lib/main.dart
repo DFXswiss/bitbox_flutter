@@ -53,6 +53,10 @@ class _MyAppState extends State<MyApp> {
     await _bitboxFlutterPlugin.initBitBox();
 
     await BitboxUsbPlatform.instance.channelHashVerify();
+    final masterFP = await _bitboxFlutterPlugin.getMasterFingerprint();
+
+    print("masterFP: $masterFP");
+
     final ltc = await _bitboxFlutterPlugin.supportsLTC();
     final eth = await _bitboxFlutterPlugin.supportsETH(1);
     final base = await _bitboxFlutterPlugin.supportsETH(8453);
@@ -64,12 +68,6 @@ class _MyAppState extends State<MyApp> {
     );
 
     print("LTC: $ltc\nETH: $eth\nBASE: $base\ndEURO: $deuro\nUSDC: $usdc");
-
-    final address = await _bitboxFlutterPlugin.getETHAddress(
-      1,
-      "m/44'/60'/0'/0/0",
-    );
-    print(address);
   }
 
   @override

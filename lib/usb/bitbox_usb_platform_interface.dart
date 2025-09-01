@@ -33,11 +33,9 @@ abstract class BitboxUsbPlatform extends PlatformInterface {
 
   Future<bool> open(BitboxDevice usbDevice);
 
-  Future<Uint8List?> transferIn(int packetSize, int timeout);
-
-  Future<int> transferOut(Uint8List data, int timeout);
-
   Future<bool> initBitBox();
+
+  Future<Uint8List> getMasterFingerprint();
 
   Future<String> getChannelHash();
 

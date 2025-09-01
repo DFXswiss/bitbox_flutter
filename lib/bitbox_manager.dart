@@ -27,6 +27,9 @@ class BitboxManager {
 
   Future<bool> initBitBox() => BitboxUsbPlatform.instance.initBitBox();
 
+  Future<Uint8List> getMasterFingerprint() =>
+      BitboxUsbPlatform.instance.getMasterFingerprint();
+
   Future<String> getChannelHash() =>
       BitboxUsbPlatform.instance.getChannelHash();
 
