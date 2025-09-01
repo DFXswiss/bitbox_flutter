@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -341,13 +340,23 @@ func BTCXPub(coinType int, keypath string, addressType int, display bool) string
 
 //export BTCSignPSBT
 func BTCSignPSBT(coinType int, psbtStr string) string {
-	psbt_, _ := psbt.NewFromRawBytes(bytes.NewBufferString(psbtStr), true)
+	psbt_, err := psbt.NewFromRawBytes(strings.NewReader(psbtStr), true)
 
-	err := bitbox.BTCSignPSBT(messages.BTCCoin(coinType), psbt_, nil)
 	if err != nil {
 		panic(err)
 	}
-	psbtStr_, _ := psbt_.B64Encode()
+
+	err = bitbox.BTCSignPSBT(messages.BTCCoin(coinType), psbt_, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	psbtStr_, err := psbt_.B64Encode()
+
+	if err != nil {
+		panic(err)
+	}
+
 	return psbtStr_
 }
 
