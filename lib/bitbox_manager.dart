@@ -62,6 +62,13 @@ class BitboxManager {
   Future<String> signBTCPsbt(int coinType, String psbt) =>
       BitboxUsbPlatform.instance.signBTCPsbt(coinType, psbt);
 
+  Future<Uint8List> signBTCMessage(
+      int coinType, String keypath, Uint8List message) {
+    final bipPath = BIPPath.fromString(keypath);
+    return BitboxUsbPlatform.instance.signBTCMessage(
+        coinType, packDerivationPath(bipPath.toPathArray()), message);
+  }
+
   Future<String> getETHAddress(
     int chainId,
     String keypath, [

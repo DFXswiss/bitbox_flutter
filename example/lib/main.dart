@@ -135,6 +135,17 @@ class _BitboxScreenState extends State<BitboxScreen> {
             },
             child: const Text("Get BTC XPub"),
           ),
+          MaterialButton(
+            onPressed: () async {
+              final sig = await widget.usbManager.signBTCMessage(
+                0,
+                "m/84'/0'/0'/0/0",
+                utf8.encode("Hey Bitbox"),
+              );
+              print(sig);
+            },
+            child: const Text("Sign Message 'Hey Bitbox'"),
+          ),
         ],
       ),
       ExpansionTile(

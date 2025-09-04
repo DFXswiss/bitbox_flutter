@@ -360,6 +360,25 @@ func BTCSignPSBT(coinType int, psbtStr string) string {
 	return psbtStr_
 }
 
+//export BTCSignMessage
+func BTCSignMessage(coinType int, keypath string, msg []byte) []byte {
+	keypathData, err := hexToUint32Slice(keypath)
+	if err != nil {
+		panic(err)
+	}
+
+	scriptConfig := &messages.BTCScriptConfigWithKeypath{
+		ScriptConfig: firmware.NewBTCScriptConfigSimple(messages.BTCScriptConfig_P2WPKH),
+		Keypath:      keypathData,
+	}
+
+	signature, err := bitbox.BTCSignMessage(messages.BTCCoin(coinType), scriptConfig, msg)
+	if err != nil {
+		panic(err)
+	}
+	return signature.Signature
+}
+
 //export GetMasterFingerprint
 func GetMasterFingerprint() []byte {
 	fingerprint, err := bitbox.RootFingerprint()

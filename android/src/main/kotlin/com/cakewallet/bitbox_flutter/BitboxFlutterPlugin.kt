@@ -3,6 +3,7 @@ package com.cakewallet.bitbox_flutter
 import android.content.Context
 import android.hardware.usb.UsbManager
 import com.cakewallet.bitbox_flutter.operations.BTCGetXPUBOperation
+import com.cakewallet.bitbox_flutter.operations.BTCSignMessageOperation
 import com.cakewallet.bitbox_flutter.operations.BTCSignPsbtOperation
 import com.cakewallet.bitbox_flutter.operations.ChannelHashVerifyOperation
 import com.cakewallet.bitbox_flutter.operations.CloseOperation
@@ -57,6 +58,7 @@ class BitboxFlutterPlugin : FlutterPlugin, MethodCallHandler {
 
         registry.registerMethodCall("getBTCXPub", BTCGetXPUBOperation(bitboxManager))
         registry.registerMethodCall("signBTCPsbt", BTCSignPsbtOperation(bitboxManager))
+        registry.registerMethodCall("signBTCMessage", BTCSignMessageOperation(bitboxManager))
 
         registry.registerMethodCall("getETHAddress", ETHGetAddressOperation(bitboxManager))
         registry.registerMethodCall("signETHTransaction", ETHSignTransactionOperation(bitboxManager))

@@ -130,6 +130,20 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
   }
 
   @override
+  Future<Uint8List> signBTCMessage(
+    int chainId,
+    Uint8List keypath,
+    Uint8List message,
+  ) async {
+    final result = await methodChannel.invokeMethod<Uint8List>(
+      'signBTCMessage',
+      {'coinType': chainId, 'keypath': hex.encode(keypath), 'message': message},
+    );
+
+    return result ?? Uint8List(0);
+  }
+
+  @override
   Future<String> getETHAddress(
     int chainId,
     Uint8List keypath,

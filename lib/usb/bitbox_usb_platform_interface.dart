@@ -51,6 +51,8 @@ abstract class BitboxUsbPlatform extends PlatformInterface {
 
   Future<String> signBTCPsbt(int coinType, String psbt);
 
+  Future<Uint8List> signBTCMessage(int chainId, Uint8List keypath, Uint8List message);
+
   Future<String> getETHAddress(int chainId, Uint8List keypath, int outputType, bool display);
 
   Future<Uint8List> signETHRPLTransaction(int chainId, Uint8List keypath, String transactionData, bool isEIP1559);
