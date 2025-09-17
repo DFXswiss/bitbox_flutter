@@ -11,4 +11,4 @@ else
 fi
 
 cd go/api/
-gomobile bind -target=android -androidapi 21 .
+gomobile bind -target=android -androidapi 24 .
