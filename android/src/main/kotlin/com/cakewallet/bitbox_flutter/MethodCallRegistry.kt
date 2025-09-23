@@ -1,5 +1,6 @@
 package com.cakewallet.bitbox_flutter
 
+import android.util.Log
 import com.cakewallet.bitbox_flutter.operations.MethodCallOperation
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -17,6 +18,7 @@ class MethodCallRegistry {
         methodCall: MethodCall,
         result: MethodChannel.Result
     ) {
+        Log.w("bitbox_flutter", "Got call ${methodCall.method}")
         val operation = this.operations[methodCall.method]
         if (operation == null) {
             result.notImplemented()
