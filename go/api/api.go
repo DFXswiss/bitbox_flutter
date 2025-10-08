@@ -6,18 +6,13 @@ import (
 	"fmt"
 	"io"
 	_ "log"
-	"math/big"
 	"os/exec"
 	"runtime"
 	"strings"
 	"time"
 
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
-	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/messages"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/mocks"
-	"github.com/btcsuite/btcd/btcutil/psbt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/konstantinullrich/bitbox_flutter/u2fhid"
 )
 
@@ -161,235 +156,6 @@ func DeviceInfo() firmware.DeviceInfo {
 	return *info
 }
 
-//export ETHGetAddress
-func ETHGetAddress(chainId int, keypath string, outputType int, display bool, contractAddress []byte) string {
-	keypathData, err := hexToUint32Slice(keypath)
-	if err != nil {
-		panic(err)
-	}
-
-	pub, err := bitbox.ETHPub(uint64(chainId), keypathData, messages.ETHPubRequest_OutputType(outputType), display, contractAddress)
-	if err != nil {
-		panic(err)
-	}
-	return pub
-}
-
-type dynamicFeeTxPayload struct {
-	ChainID    uint64
-	Nonce      uint64
-	GasTipCap  *big.Int // a.k.a. maxPriorityFeePerGas
-	GasFeeCap  *big.Int // a.k.a. maxFeePerGas
-	Gas        uint64
-	To         *common.Address `rlp:"nil"`
-	Value      *big.Int
-	Data       []byte
-	AccessList any
-
-	// Signature values
-	V *big.Int `rlp:"optional"`
-	R *big.Int `rlp:"optional"`
-	S *big.Int `rlp:"optional"`
-}
-
-type legacyTxPayload struct {
-	Nonce    uint64
-	GasPrice *big.Int
-	Gas      uint64
-	To       *common.Address `rlp:"nil"`
-	Value    *big.Int
-	Data     []byte
-	V, R, S  *big.Int `rlp:"optional"`
-}
-
-//export ETHSignRPLTx
-func ETHSignRPLTx(chainId int, keypath string, encodedTx string, isEIP1559 bool) []byte {
-	keypathData, err := hexToUint32Slice(keypath)
-	if err != nil {
-		panic(err)
-	}
-
-	txEncoded, _ := hex.DecodeString(encodedTx)
-
-	var signature []byte
-	if isEIP1559 {
-		var tx dynamicFeeTxPayload
-		err = rlp.DecodeBytes(txEncoded, &tx)
-		if err != nil {
-			panic(err)
-		}
-
-		signature, err = bitbox.ETHSignEIP1559(
-			uint64(chainId),
-			keypathData,
-			tx.Nonce,
-			tx.GasTipCap,
-			tx.GasFeeCap,
-			tx.Gas,
-			[20]byte(tx.To.Bytes()),
-			tx.Value,
-			tx.Data,
-			firmware.ETHIdentifyCase(tx.To.String()),
-		)
-	} else {
-		var tx legacyTxPayload
-		err = rlp.DecodeBytes(txEncoded, &tx)
-		if err != nil {
-			panic(err)
-		}
-		signature, err = bitbox.ETHSign(
-			uint64(chainId),
-			keypathData,
-			tx.Nonce,
-			tx.GasPrice,
-			tx.Gas,
-			[20]byte(tx.To.Bytes()),
-			tx.Value,
-			tx.Data,
-			firmware.ETHIdentifyCase(tx.To.String()),
-		)
-	}
-
-	if err != nil {
-		panic(err)
-	}
-
-	return signature
-}
-
-//export ETHSignTransaction
-func ETHSignTransaction(chainId int, keypath string, nonce int, gasPrice string, gasLimit int, recipient []byte, value string, data []byte, recipientAddressCase int) []byte {
-	keypathData, err := hexToUint32Slice(keypath)
-	if err != nil {
-		panic(err)
-	}
-
-	gasPriceBI := new(big.Int)
-	gasPriceBI, _ = gasPriceBI.SetString(gasPrice, 16)
-
-	valueBI := new(big.Int)
-	valueBI, _ = valueBI.SetString(value, 16)
-
-	signature, err := bitbox.ETHSign(uint64(chainId), keypathData, uint64(nonce), gasPriceBI, uint64(gasLimit), [20]byte(recipient), valueBI, data, messages.ETHAddressCase(recipientAddressCase))
-	if err != nil {
-		panic(err)
-	}
-	return signature
-}
-
-//export ETHSignEIP1559
-func ETHSignEIP1559(chainId int, keypath string, nonce int, maxPriorityFeePerGas string, maxFeePerGas string, gasLimit int, recipient []byte, value string, data []byte, recipientAddressCase int) []byte {
-	keypathData, err := hexToUint32Slice(keypath)
-	if err != nil {
-		panic(err)
-	}
-
-	maxPriorityFeePerGasBI := new(big.Int)
-	maxPriorityFeePerGasBI, _ = maxPriorityFeePerGasBI.SetString(maxPriorityFeePerGas, 16)
-
-	maxFeePerGasBI := new(big.Int)
-	maxFeePerGasBI, _ = maxFeePerGasBI.SetString(maxFeePerGas, 16)
-
-	valueBI := new(big.Int)
-	valueBI, _ = valueBI.SetString(value, 16)
-
-	signature, err := bitbox.ETHSignEIP1559(uint64(chainId), keypathData, uint64(nonce), maxPriorityFeePerGasBI, maxFeePerGasBI, uint64(gasLimit), [20]byte(recipient), valueBI, data, messages.ETHAddressCase(recipientAddressCase))
-	if err != nil {
-		panic(err)
-	}
-
-	return signature
-}
-
-//export ETHSignMessage
-func ETHSignMessage(chainId int, keypath string, msg []byte) []byte {
-	keypathData, err := hexToUint32Slice(keypath)
-	if err != nil {
-		panic(err)
-	}
-
-	signature, err := bitbox.ETHSignMessage(uint64(chainId), keypathData, msg)
-	if err != nil {
-		panic(err)
-	}
-	return signature
-}
-
-//export ETHSignTypedMessage
-func ETHSignTypedMessage(chainId int, keypath string, jsonMsg []byte) []byte {
-	keypathData, err := hexToUint32Slice(keypath)
-	if err != nil {
-		panic(err)
-	}
-
-	signature, err := bitbox.ETHSignTypedMessage(uint64(chainId), keypathData, jsonMsg)
-	if err != nil {
-		panic(err)
-	}
-
-	return signature
-}
-
-//export BTCXPub
-func BTCXPub(coinType int, keypath string, addressType int, display bool) string {
-	keypathData, _ := hexToUint32Slice(keypath)
-
-	pub, _ := bitbox.BTCXPub(messages.BTCCoin(coinType), keypathData, messages.BTCPubRequest_XPubType(addressType), display)
-	return pub
-}
-
-//export BTCSignPSBT
-func BTCSignPSBT(coinType int, psbtStr string) string {
-	psbt_, err := psbt.NewFromRawBytes(strings.NewReader(psbtStr), true)
-
-	if err != nil {
-		panic(err)
-	}
-
-	err = bitbox.BTCSignPSBT(messages.BTCCoin(coinType), psbt_, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	psbtStr_, err := psbt_.B64Encode()
-
-	if err != nil {
-		panic(err)
-	}
-
-	return psbtStr_
-}
-
-//export BTCSignMessage
-func BTCSignMessage(coinType int, keypath string, msg []byte) []byte {
-	keypathData, err := hexToUint32Slice(keypath)
-	if err != nil {
-		panic(err)
-	}
-
-	scriptConfig := &messages.BTCScriptConfigWithKeypath{
-		ScriptConfig: firmware.NewBTCScriptConfigSimple(messages.BTCScriptConfig_P2WPKH),
-		Keypath:      keypathData,
-	}
-
-	signature, err := bitbox.BTCSignMessage(messages.BTCCoin(coinType), scriptConfig, msg)
-	if err != nil {
-		panic(err)
-	}
-	return signature.Signature
-}
-
-//export GetMasterFingerprint
-func GetMasterFingerprint() []byte {
-	fingerprint, err := bitbox.RootFingerprint()
-
-	if err != nil {
-		return make([]byte, 0)
-	}
-
-	return fingerprint
-}
-
 func hexToUint32Slice(hexStr string) ([]uint32, error) {
 	bytes, err := hex.DecodeString(hexStr)
 	if err != nil {
@@ -397,7 +163,7 @@ func hexToUint32Slice(hexStr string) ([]uint32, error) {
 	}
 
 	if len(bytes)%4 != 0 {
-		return nil, fmt.Errorf("Byte-Länge muss durch 4 teilbar sein für uint32")
+		return nil, fmt.Errorf("bytelength has to be divisable by 4 for uint32")
 	}
 
 	result := make([]uint32, len(bytes)/4)
