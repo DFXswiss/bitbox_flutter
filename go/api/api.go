@@ -20,7 +20,7 @@ import (
 // time.Local is hard-coded to UTC. See https://github.com/golang/go/issues/20455.
 //
 // We need the correct timezone to be able to send the `time.Now().Zone()` offset to the BitBox02.
-// Without it, the BitBox02 will always display UTC time instad of local time.
+// Without it, the BitBox02 will always display UTC time instead of local time.
 //
 // This fix is copied from https://github.com/golang/go/issues/20455#issuecomment-342287698.
 func fixTimezone() {
@@ -42,11 +42,6 @@ func fixTimezone() {
 func init() {
 	fixTimezone()
 }
-
-// the Go*-named interfaces are implemented in Java for the mobile client. The "Go" prefix is so
-// that the code is more readable in Java (interfaces coming from Go-land). The implemented
-// interfaces are than translated to implement backend.Environment (see see backendEnvironment
-// struct).
 
 // GoReadWriteCloserInterface adapts io.ReadWriteCloser's Read method to return the byte read byte slice
 // instead of the .Read([]byte) pattern. This is as gomobile bind seems to make a copy of passed
@@ -77,7 +72,8 @@ type readWriteCloser struct {
 }
 
 // Read implements io.ReadWriteCloser, translating GoReadWriteCloserInterface.Read, which returns a slice
-// instead receiving it as an argument.
+//
+//	instead of receiving it as an argument.
 func (r readWriteCloser) Read(readBytesOut []byte) (int, error) {
 	readBytes, err := r.GoReadWriteCloserInterface.Read(len(readBytesOut))
 	if err != nil {
