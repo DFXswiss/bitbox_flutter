@@ -98,7 +98,8 @@ task goBind {
     project.exec {
         workingDir goPath
         executable path
-        args "$outPath/api.aar"
+        args "api.aar"
     }
 
+    file("$goPath/api.aar").renameTo(file("$outPath/api.aar"))
 }
