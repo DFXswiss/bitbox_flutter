@@ -27,8 +27,7 @@ allprojects {
 rootProject.allprojects {
     repositories {
         flatDir {
-//            dirs file('libs')
-            dirs project(':bitbox_flutter').file('libs')
+            dirs file('libs')
         }
     }
 }
@@ -85,7 +84,7 @@ import org.apache.tools.ant.taskdefs.condition.Os
 task goBind {
     def path = Paths.get("${buildscript.sourceFile.parent}", "..", "run_build_tool_android.sh");
     def goPath = Paths.get("${buildscript.sourceFile.parent}", "..", "go", "api");
-    def outPath = Paths.get("${buildscript.sourceFile.parent}", "libs", "api.aar")
+    def outPath = Paths.get("${buildDir}", "..", "..", "android", "app", "libs");
 
     if (!Os.isFamily(Os.FAMILY_WINDOWS)) {
         project.exec {
@@ -93,10 +92,13 @@ task goBind {
         }
     }
 
+    def outPathDir = new File("$outPath");
+    outPathDir.mkdirs();
+
     project.exec {
         workingDir goPath
         executable path
-        args "$outPath"
+        args "$outPath/api.aar"
     }
 
 }
