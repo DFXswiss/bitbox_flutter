@@ -14,6 +14,7 @@ A flutter plugin for bitbox
   s.author           = { 'Your Company' => 'email@example.com' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
+  s.vendored_frameworks = 'Api.xcframework'
   s.dependency 'Flutter'
   s.platform = :ios, '12.0'
 

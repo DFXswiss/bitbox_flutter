@@ -177,6 +177,8 @@ class BitboxManager {
     );
   }
 
+  Future<bool> startScan() => BitboxUsbPlatform.instance.startScan();
+
   Future<List<BitboxDevice>> get devices async {
     if (_disposed) throw Exception("Is disposed");
 

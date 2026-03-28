@@ -22,6 +22,12 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
   }
 
   @override
+  Future<bool> startScan() async {
+    final result = await methodChannel.invokeMethod<bool>('startScan');
+    return result ?? false;
+  }
+
+  @override
   Future<bool> requestPermission(BitboxDevice usbDevice) async {
     final granted = await methodChannel.invokeMethod<bool>(
       'requestPermission',

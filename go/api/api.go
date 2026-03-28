@@ -11,8 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BitBoxSwiss/bitbox02-api-go/api/common"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/mocks"
+	"github.com/BitBoxSwiss/bitbox02-api-go/util/semver"
 	"github.com/konstantinullrich/bitbox_flutter/u2fhid"
 )
 
@@ -107,6 +109,44 @@ func GetDevice(device GoReadWriteCloserInterface) {
 	bitbox = firmware.NewDevice(nil, nil, &mocks.Config{}, comm, &mocks.Logger{})
 }
 
+// GetDeviceWithInfo is like GetDevice but accepts version and product info for Bluetooth connections.
+// version should be like "v9.25.0", product should be like "bb02p-multi" or "bb02p-btconly".
+//
+//export GetDeviceWithInfo
+func GetDeviceWithInfo(device GoReadWriteCloserInterface, versionStr string, productStr string) {
+	const bitboxCMD = 0x80 + 0x40 + 0x01
+	comm := u2fhid.NewCommunication(readWriteCloser{device}, bitboxCMD)
+
+	// Parse version string (e.g., "v9.25.0" -> semver)
+	version, err := semver.NewSemVerFromString(strings.TrimPrefix(versionStr, "v"))
+	if err != nil {
+		panic(fmt.Sprintf("invalid version: %s", versionStr))
+	}
+
+	// Map product string to common.Product
+	// bb02p-* are BitBox02 Plus (Nova) products — must use Plus variants
+	var product common.Product
+	switch productStr {
+	case "bb02p-multi", "BitBox02 Nova Multi":
+		product = common.ProductBitBox02PlusMulti
+	case "bb02p-btconly", "BitBox02 Nova BTC-only":
+		product = common.ProductBitBox02PlusBTCOnly
+	case "bb02p-bl-multi", "BitBox02 Nova Multi bl":
+		product = common.ProductBitBox02PlusMulti
+	case "bb02p-bl-btconly", "BitBox02 Nova BTC-only bl":
+		product = common.ProductBitBox02PlusBTCOnly
+	// Original BitBox02 (non-Nova) products
+	case "BitBox02Multi":
+		product = common.ProductBitBox02Multi
+	case "BitBox02BTCOnly":
+		product = common.ProductBitBox02BTCOnly
+	default:
+		product = common.ProductBitBox02PlusMulti
+	}
+
+	bitbox = firmware.NewDevice(version, &product, &mocks.Config{}, comm, &mocks.Logger{})
+}
+
 //export GetChannelHash
 func GetChannelHash() string {
 	hash, _ := bitbox.ChannelHash()
@@ -119,11 +159,13 @@ func ChannelHashVerify(ok bool) {
 }
 
 //export InitDevice
-func InitDevice() {
+func InitDevice() bool {
 	err := bitbox.Init()
 	if err != nil {
-		panic(err)
+		fmt.Println("[InitDevice] error:", err)
+		return false
 	}
+	return true
 }
 
 //export SupportsETH
