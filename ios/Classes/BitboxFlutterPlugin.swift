@@ -242,11 +242,16 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
             return
         }
 
-        let signature = ApiETHSignRPLTx(chainId, keypathHex, txData, isEIP1559)
-        if let sig = signature {
-            result(FlutterStandardTypedData(bytes: sig))
-        } else {
-            result(FlutterStandardTypedData(bytes: Data()))
+        // Run on background thread — signing requires device communication
+        DispatchQueue.global().async {
+            let signature = ApiETHSignRPLTx(chainId, keypathHex, txData, isEIP1559)
+            DispatchQueue.main.async {
+                if let sig = signature {
+                    result(FlutterStandardTypedData(bytes: sig))
+                } else {
+                    result(FlutterStandardTypedData(bytes: Data()))
+                }
+            }
         }
     }
 
@@ -281,11 +286,16 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
             return
         }
 
-        let signature = ApiETHSignTypedMessage(chainId, keypathHex, jsonMessage.data)
-        if let sig = signature {
-            result(FlutterStandardTypedData(bytes: sig))
-        } else {
-            result(FlutterStandardTypedData(bytes: Data()))
+        // Run on background thread — signing requires device communication
+        DispatchQueue.global().async {
+            let signature = ApiETHSignTypedMessage(chainId, keypathHex, jsonMessage.data)
+            DispatchQueue.main.async {
+                if let sig = signature {
+                    result(FlutterStandardTypedData(bytes: sig))
+                } else {
+                    result(FlutterStandardTypedData(bytes: Data()))
+                }
+            }
         }
     }
 }
