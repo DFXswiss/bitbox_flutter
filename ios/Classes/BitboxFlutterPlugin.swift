@@ -259,11 +259,16 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
             return
         }
 
-        let signature = ApiETHSignMessage(chainId, keypathHex, message.data)
-        if let sig = signature {
-            result(FlutterStandardTypedData(bytes: sig))
-        } else {
-            result(FlutterStandardTypedData(bytes: Data()))
+        // Run on background thread — signing requires device communication
+        DispatchQueue.global().async {
+            let signature = ApiETHSignMessage(chainId, keypathHex, message.data)
+            DispatchQueue.main.async {
+                if let sig = signature {
+                    result(FlutterStandardTypedData(bytes: sig))
+                } else {
+                    result(FlutterStandardTypedData(bytes: Data()))
+                }
+            }
         }
     }
 
