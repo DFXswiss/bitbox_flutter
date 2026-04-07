@@ -42,13 +42,13 @@ class GoDeviceInfo(private val device: UsbDevice?, var usbManager: UsbManager) :
                 @Throws(Exception::class)
                 override fun read(n: Long): ByteArray {
                     val result = ByteArray(n.toInt())
-                    connection.bulkTransfer(endpointIn, result, result.size, 5000000)
+                    connection.bulkTransfer(endpointIn, result, result.size, 10_000)
                     return result
                 }
 
                 @Throws(Exception::class)
                 override fun write(p0: ByteArray): Long {
-                    return connection.bulkTransfer(endpointOut, p0, p0.size, 5000000).toLong()
+                    return connection.bulkTransfer(endpointOut, p0, p0.size, 10_000).toLong()
                 }
             }
         }

@@ -26,6 +26,7 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import io.flutter.plugin.common.StandardMethodCodec
 
 class BitboxFlutterPlugin : FlutterPlugin, MethodCallHandler {
     private lateinit var channel : MethodChannel
@@ -35,7 +36,8 @@ class BitboxFlutterPlugin : FlutterPlugin, MethodCallHandler {
     private lateinit var bitboxManager: BitboxManager
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(binding.getBinaryMessenger(), "bitbox_usb")
+        val taskQueue = binding.binaryMessenger.makeBackgroundTaskQueue()
+        channel = MethodChannel(binding.binaryMessenger, "bitbox_usb", StandardMethodCodec.INSTANCE, taskQueue)
         channel.setMethodCallHandler(this)
         context = binding.getApplicationContext()
         usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
