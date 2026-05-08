@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
@@ -9,40 +10,55 @@ import (
 )
 
 //export BTCXPub
-func BTCXPub(coinType int, keypath string, addressType int, display bool) string {
-	keypathData, _ := hexToUint32Slice(keypath)
+func BTCXPub(coinType int, keypath string, addressType int, display bool) (xpub string) {
+	defer recoverPanic("BTCXPub")
 
-	pub, _ := bitbox.BTCXPub(messages.BTCCoin(coinType), keypathData, messages.BTCPubRequest_XPubType(addressType), display)
+	keypathData, err := hexToUint32Slice(keypath)
+	if err != nil {
+		fmt.Printf("[BTCXPub] keypath decode error: %v\n", err)
+		return ""
+	}
+
+	pub, err := bitbox.BTCXPub(messages.BTCCoin(coinType), keypathData, messages.BTCPubRequest_XPubType(addressType), display)
+	if err != nil {
+		fmt.Printf("[BTCXPub] device error: %v\n", err)
+		return ""
+	}
 	return pub
 }
 
 //export BTCSignPSBT
-func BTCSignPSBT(coinType int, psbtStr string) string {
-	psbt_, err := psbt.NewFromRawBytes(strings.NewReader(psbtStr), true)
+func BTCSignPSBT(coinType int, psbtStr string) (signed string) {
+	defer recoverPanic("BTCSignPSBT")
 
+	psbt_, err := psbt.NewFromRawBytes(strings.NewReader(psbtStr), true)
 	if err != nil {
-		panic(err)
+		fmt.Printf("[BTCSignPSBT] PSBT parse error: %v\n", err)
+		return ""
 	}
 
-	err = bitbox.BTCSignPSBT(messages.BTCCoin(coinType), psbt_, nil)
-	if err != nil {
-		panic(err)
+	if err := bitbox.BTCSignPSBT(messages.BTCCoin(coinType), psbt_, nil); err != nil {
+		fmt.Printf("[BTCSignPSBT] device error: %v\n", err)
+		return ""
 	}
 
 	psbtStr_, err := psbt_.B64Encode()
-
 	if err != nil {
-		panic(err)
+		fmt.Printf("[BTCSignPSBT] PSBT encode error: %v\n", err)
+		return ""
 	}
 
 	return psbtStr_
 }
 
 //export BTCSignMessage
-func BTCSignMessage(coinType int, keypath string, msg []byte) []byte {
+func BTCSignMessage(coinType int, keypath string, msg []byte) (signature []byte) {
+	defer recoverPanic("BTCSignMessage")
+
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
-		panic(err)
+		fmt.Printf("[BTCSignMessage] keypath decode error: %v\n", err)
+		return nil
 	}
 
 	scriptConfig := &messages.BTCScriptConfigWithKeypath{
@@ -50,20 +66,21 @@ func BTCSignMessage(coinType int, keypath string, msg []byte) []byte {
 		Keypath:      keypathData,
 	}
 
-	signature, err := bitbox.BTCSignMessage(messages.BTCCoin(coinType), scriptConfig, msg)
+	result, err := bitbox.BTCSignMessage(messages.BTCCoin(coinType), scriptConfig, msg)
 	if err != nil {
-		panic(err)
+		fmt.Printf("[BTCSignMessage] device error: %v\n", err)
+		return nil
 	}
-	return signature.Signature
+	return result.Signature
 }
 
 //export GetMasterFingerprint
-func GetMasterFingerprint() []byte {
-	fingerprint, err := bitbox.RootFingerprint()
+func GetMasterFingerprint() (fingerprint []byte) {
+	defer recoverPanic("GetMasterFingerprint")
 
+	fingerprint, err := bitbox.RootFingerprint()
 	if err != nil {
 		return make([]byte, 0)
 	}
-
 	return fingerprint
 }

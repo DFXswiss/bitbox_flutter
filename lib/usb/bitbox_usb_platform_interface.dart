@@ -29,6 +29,8 @@ abstract class BitboxUsbPlatform extends PlatformInterface {
 
   Future<List<BitboxDevice>> getDevices();
 
+  Future<bool> startScan();
+
   Future<bool> requestPermission(BitboxDevice usbDevice);
 
   Future<bool> open(BitboxDevice usbDevice);

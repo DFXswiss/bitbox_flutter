@@ -11,8 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BitBoxSwiss/bitbox02-api-go/api/common"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/mocks"
+	"github.com/BitBoxSwiss/bitbox02-api-go/util/semver"
 	"github.com/konstantinullrich/bitbox_flutter/u2fhid"
 )
 
@@ -107,48 +109,138 @@ func GetDevice(device GoReadWriteCloserInterface) {
 	bitbox = firmware.NewDevice(nil, nil, &mocks.Config{}, comm, &mocks.Logger{})
 }
 
+// GetDeviceWithInfo is like GetDevice but accepts version and product info for Bluetooth connections.
+// version should be like "v9.25.0", product should be like "bb02p-multi" or "bb02p-btconly".
+//
+//export GetDeviceWithInfo
+func GetDeviceWithInfo(device GoReadWriteCloserInterface, versionStr string, productStr string) {
+	defer recoverPanic("GetDeviceWithInfo")
+
+	const bitboxCMD = 0x80 + 0x40 + 0x01
+	comm := u2fhid.NewCommunication(readWriteCloser{device}, bitboxCMD)
+
+	// Parse version string (e.g., "v9.25.0" -> semver). Fall back to a known
+	// default rather than panicking, so a malformed version from the device
+	// does not crash the host engine.
+	version, err := semver.NewSemVerFromString(strings.TrimPrefix(versionStr, "v"))
+	if err != nil {
+		fmt.Printf("[GetDeviceWithInfo] invalid version %q, falling back: %v\n", versionStr, err)
+		version = semver.NewSemVer(9, 25, 0)
+	}
+
+	// Map product string to common.Product
+	// bb02p-* are BitBox02 Plus (Nova) products — must use Plus variants
+	var product common.Product
+	switch productStr {
+	case "bb02p-multi", "BitBox02 Nova Multi":
+		product = common.ProductBitBox02PlusMulti
+	case "bb02p-btconly", "BitBox02 Nova BTC-only":
+		product = common.ProductBitBox02PlusBTCOnly
+	case "bb02p-bl-multi", "BitBox02 Nova Multi bl":
+		product = common.ProductBitBox02PlusMulti
+	case "bb02p-bl-btconly", "BitBox02 Nova BTC-only bl":
+		product = common.ProductBitBox02PlusBTCOnly
+	// Original BitBox02 (non-Nova) products
+	case "BitBox02Multi":
+		product = common.ProductBitBox02Multi
+	case "BitBox02BTCOnly":
+		product = common.ProductBitBox02BTCOnly
+	default:
+		product = common.ProductBitBox02PlusMulti
+	}
+
+	bitbox = firmware.NewDevice(version, &product, &mocks.Config{}, comm, &mocks.Logger{})
+}
+
 //export GetChannelHash
-func GetChannelHash() string {
-	hash, _ := bitbox.ChannelHash()
+func GetChannelHash() (hash string) {
+	defer recoverPanic("GetChannelHash")
+
+	if bitbox == nil {
+		return ""
+	}
+	hash, _ = bitbox.ChannelHash()
 	return hash
 }
 
 //export ChannelHashVerify
 func ChannelHashVerify(ok bool) {
+	defer recoverPanic("ChannelHashVerify")
+
+	if bitbox == nil {
+		return
+	}
 	bitbox.ChannelHashVerify(ok)
 }
 
 //export InitDevice
-func InitDevice() {
+func InitDevice() (success bool) {
+	defer recoverPanic("InitDevice")
+
+	if bitbox == nil {
+		fmt.Println("[InitDevice] device pointer is nil")
+		return false
+	}
 	err := bitbox.Init()
 	if err != nil {
-		panic(err)
+		fmt.Println("[InitDevice] error:", err)
+		return false
 	}
+	return true
 }
 
 //export SupportsETH
-func SupportsETH(chainId int) bool {
+func SupportsETH(chainId int) (supported bool) {
+	defer recoverPanic("SupportsETH")
+
+	if bitbox == nil {
+		return false
+	}
 	return bitbox.SupportsETH(uint64(chainId))
 }
 
 //export SupportsLTC
-func SupportsLTC() bool {
+func SupportsLTC() (supported bool) {
+	defer recoverPanic("SupportsLTC")
+
+	if bitbox == nil {
+		return false
+	}
 	return bitbox.SupportsLTC()
 }
 
 //export SupportsBluetooth
-func SupportsBluetooth() bool {
+func SupportsBluetooth() (supported bool) {
+	defer recoverPanic("SupportsBluetooth")
+
+	if bitbox == nil {
+		return false
+	}
 	return bitbox.SupportsBluetooth()
 }
 
 //export SupportsERC20
-func SupportsERC20(contractAddress string) bool {
+func SupportsERC20(contractAddress string) (supported bool) {
+	defer recoverPanic("SupportsERC20")
+
+	if bitbox == nil {
+		return false
+	}
 	return bitbox.SupportsERC20(contractAddress)
 }
 
 //export DeviceInfo
-func DeviceInfo() firmware.DeviceInfo {
-	info, _ := bitbox.DeviceInfo()
+func DeviceInfo() (out firmware.DeviceInfo) {
+	defer recoverPanic("DeviceInfo")
+
+	if bitbox == nil {
+		return firmware.DeviceInfo{}
+	}
+	info, err := bitbox.DeviceInfo()
+	if err != nil || info == nil {
+		fmt.Printf("[DeviceInfo] error: %v\n", err)
+		return firmware.DeviceInfo{}
+	}
 	return *info
 }
 
