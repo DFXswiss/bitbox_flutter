@@ -56,9 +56,6 @@ class BLEConnectionContext {
     let semaphore = DispatchSemaphore(value: 0)
     var readBuffer = Data()
     var readBufferLock = NSLock()
-    // Track received packets to detect and skip duplicates
-    // Key: packet data hash, Value: true if seen
-    var seenPackets: Set<Data> = []
 }
 
 class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
@@ -108,7 +105,6 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         if let ctx = currentContext {
             ctx.readBufferLock.lock()
             ctx.readBuffer.removeAll()
-            ctx.seenPackets.removeAll()
             // Drain semaphore to match the cleared buffer — prevents stale signals
             // from unblocking a future readBlocking() call with no data
             while ctx.semaphore.wait(timeout: .now()) == .success {}
@@ -332,15 +328,7 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
                 print("BLE: ERROR, expected 64 bytes")
             }
 
-            // Deduplicate: skip if we've already seen this exact packet
             ctx.readBufferLock.lock()
-            if ctx.seenPackets.contains(data) {
-                print("BLE: skipping duplicate packet: \(data.prefix(8).hexEncodedString())...")
-                ctx.readBufferLock.unlock()
-                return
-            }
-            ctx.seenPackets.insert(data)
-
             print("BLE: received data: \(data.hexEncodedString())")
             ctx.readBuffer.append(data)
             // Signal inside lock to keep buffer and semaphore count in sync
@@ -624,7 +612,7 @@ class BluetoothReadWriteCloser: NSObject, ApiGoReadWriteCloserInterfaceProtocol 
         guard let data = data, let p = bluetoothManager.connectedPeripheral,
             let pWriter = bluetoothManager.pWriter
         else {
-            n!.pointee = 0
+            n?.pointee = 0
             return
         }
 
@@ -642,10 +630,9 @@ class BluetoothReadWriteCloser: NSObject, ApiGoReadWriteCloserInterfaceProtocol 
 
         let len = min(max_char_len, max_mtu_len, data.count)
 
-        bluetoothManager.connectedPeripheral!.writeValue(
-            data[..<len], for: pWriter, type: .withResponse)
-        n!.pointee = len
-        print("BLE: write data (\(len) bytes): \(data[..<8].hexEncodedString())...")
+        p.writeValue(data[..<len], for: pWriter, type: .withResponse)
+        n?.pointee = len
+        print("BLE: write data (\(len) bytes): \(data.prefix(min(8, data.count)).hexEncodedString())...")
     }
 }
 
