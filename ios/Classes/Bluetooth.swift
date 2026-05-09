@@ -56,6 +56,9 @@ class BLEConnectionContext {
     let semaphore = DispatchSemaphore(value: 0)
     var readBuffer = Data()
     var readBufferLock = NSLock()
+    // Track received packets to detect and skip duplicates
+    // Key: packet data hash, Value: true if seen
+    var seenPackets: Set<Data> = []
 }
 
 class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
@@ -105,6 +108,7 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         if let ctx = currentContext {
             ctx.readBufferLock.lock()
             ctx.readBuffer.removeAll()
+            ctx.seenPackets.removeAll()
             // Drain semaphore to match the cleared buffer — prevents stale signals
             // from unblocking a future readBlocking() call with no data
             while ctx.semaphore.wait(timeout: .now()) == .success {}
@@ -329,6 +333,28 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
             }
 
             ctx.readBufferLock.lock()
+            // Per-message duplicate detection. iOS CoreBluetooth occasionally
+            // delivers the same notification packet twice (BLE-layer
+            // retransmit) — we drop those because they corrupt the U2F HID
+            // frame stream the SDK reassembles in readFrame().
+            //
+            // The dedup window is reset whenever an init frame arrives (CMD
+            // byte has bit 7 set, i.e. data[4] & 0x80 != 0): a new message
+            // can legitimately repeat byte-identical content from the
+            // previous message (e.g. a status ACK), and the receiver-side
+            // reset prevents those legitimate identical responses from being
+            // swallowed.
+            let isInitFrame = data.count > 4 && (data[4] & 0x80) != 0
+            if isInitFrame {
+                ctx.seenPackets.removeAll()
+            }
+            if ctx.seenPackets.contains(data) {
+                print("BLE: skipping duplicate packet: \(data.prefix(8).hexEncodedString())...")
+                ctx.readBufferLock.unlock()
+                return
+            }
+            ctx.seenPackets.insert(data)
+
             print("BLE: received data: \(data.hexEncodedString())")
             ctx.readBuffer.append(data)
             // Signal inside lock to keep buffer and semaphore count in sync
