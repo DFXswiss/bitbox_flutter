@@ -333,25 +333,19 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
             }
 
             ctx.readBufferLock.lock()
-            // Per-message duplicate detection. iOS CoreBluetooth occasionally
-            // delivers the same notification packet twice (BLE-layer
-            // retransmit) — we drop those because they corrupt the U2F HID
-            // frame stream the SDK reassembles in readFrame().
-            //
-            // The dedup window is reset whenever an init frame arrives (CMD
-            // byte has bit 7 set, i.e. data[4] & 0x80 != 0): a new message
-            // can legitimately repeat byte-identical content from the
-            // previous message (e.g. a status ACK), and the receiver-side
-            // reset prevents those legitimate identical responses from being
-            // swallowed.
-            let isInitFrame = data.count > 4 && (data[4] & 0x80) != 0
-            if isInitFrame {
-                ctx.seenPackets.removeAll()
-            }
+            // Drop BLE-layer retransmits (CoreBluetooth occasionally
+            // delivers an indication twice) so they don't corrupt the U2F
+            // HID stream and desync the noise nonce. The contains-check
+            // MUST run BEFORE the init-frame reset, otherwise retransmits
+            // of single-frame init messages slip through.
             if ctx.seenPackets.contains(data) {
                 print("BLE: skipping duplicate packet: \(data.prefix(8).hexEncodedString())...")
                 ctx.readBufferLock.unlock()
                 return
+            }
+            let isInitFrame = data.count > 4 && (data[4] & 0x80) != 0
+            if isInitFrame {
+                ctx.seenPackets.removeAll()
             }
             ctx.seenPackets.insert(data)
 
