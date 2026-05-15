@@ -198,6 +198,21 @@ void main() {
     );
   });
 
+  test('simulates no device and empty channel hash states', () async {
+    final platform = installSimulatedBitboxPlatform(
+      devices: const [],
+      channelHash: '',
+      channelHashVerifyResult: false,
+      requireOpen: false,
+    );
+    final manager = BitboxManager();
+
+    expect(await manager.devices, isEmpty);
+    expect(await manager.getChannelHash(), isEmpty);
+    expect(await manager.channelHashVerify(), isFalse);
+    expect(platform.channelHashVerified, isFalse);
+  });
+
   test('guards against signing before the simulated device is opened',
       () async {
     installSimulatedBitboxPlatform();

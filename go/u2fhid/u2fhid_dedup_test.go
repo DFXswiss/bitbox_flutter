@@ -1,8 +1,7 @@
 // Frame-level u2fhid tests. readFrame() has no SEQ validation and no
-// duplicate-frame detection — the iOS BLE per-message dedup in
-// ios/Classes/Bluetooth.swift is the only line of defence against BLE-layer
-// retransmits desynchronising the firmware stream. These tests document
-// that contract so a future change here surfaces if the assumption breaks.
+// duplicate-frame detection, so the BLE bridge must not leave stale frames in
+// the read stream. These tests document the framing assumptions without
+// requiring platform-side packet deduplication.
 
 package u2fhid
 
@@ -94,8 +93,8 @@ func TestReadFrame_TwoFrameMessage(t *testing.T) {
 
 // readFrame has no SEQ validation: a duplicate cont frame is silently
 // appended. The next ReadFrame() then misparses the leftover bytes as a new
-// message and fails on CID/CMD mismatch. The platform-side dedup is the
-// only thing protecting the SDK from this regression in production.
+// message and fails on CID/CMD mismatch. The BLE bridge must keep its request
+// boundaries clean so stale notifications cannot leak into the next response.
 func TestReadFrame_DuplicateContFrame_DesyncsFollowingMessage(t *testing.T) {
 	payload := bytes.Repeat([]byte{0xAB}, 100)
 	contFrame := makeContFrame(0, payload[57:])
