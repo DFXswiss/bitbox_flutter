@@ -104,6 +104,8 @@ var bitbox *firmware.Device
 
 //export GetDevice
 func GetDevice(device GoReadWriteCloserInterface) {
+	defer recoverPanic("GetDevice")
+
 	const bitboxCMD = 0x80 + 0x40 + 0x01
 	comm := u2fhid.NewCommunication(readWriteCloser{device}, bitboxCMD)
 	bitbox = firmware.NewDevice(nil, nil, &mocks.Config{}, comm, &mocks.Logger{})
