@@ -81,7 +81,8 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
 
   @override
   Future<Uint8List> getMasterFingerprint() async {
-    final result = await methodChannel.invokeMethod<Uint8List>('getMasterFingerprint');
+    final result =
+        await methodChannel.invokeMethod<Uint8List>('getMasterFingerprint');
 
     return result ?? Uint8List(0);
   }
@@ -130,11 +131,8 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
 
   @override
   Future<String> signBTCPsbt(int coinType, String psbt) async {
-    final result =
-    await methodChannel.invokeMethod<String>('signBTCPsbt', {
-      'coinType': coinType,
-      'psbt': psbt
-    });
+    final result = await methodChannel.invokeMethod<String>(
+        'signBTCPsbt', {'coinType': coinType, 'psbt': psbt});
 
     return result ?? "";
   }
@@ -196,18 +194,18 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
     Uint8List data,
     int recipientAddressCase,
   ) async {
-    final result = await methodChannel
-        .invokeMethod<Uint8List>('signETHTransaction', {
-          'chainId': chainId,
-          'keypath': hex.encode(keypath),
-          'nonce': nonce,
-          'gasPrice': gasPrice,
-          'gasLimit': gasLimit,
-          'recipient': recipient,
-          'value': value,
-          'data': data,
-          'recipientAddressCase': recipientAddressCase,
-        });
+    final result =
+        await methodChannel.invokeMethod<Uint8List>('signETHTransaction', {
+      'chainId': chainId,
+      'keypath': hex.encode(keypath),
+      'nonce': nonce,
+      'gasPrice': gasPrice,
+      'gasLimit': gasLimit,
+      'recipient': recipient,
+      'value': value,
+      'data': data,
+      'recipientAddressCase': recipientAddressCase,
+    });
 
     return result ?? Uint8List(0);
   }
@@ -227,17 +225,17 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
   ) async {
     final result = await methodChannel
         .invokeMethod<Uint8List>('signETHTransactionEIP1559', {
-          'chainId': chainId,
-          'keypath': hex.encode(keypath),
-          'nonce': nonce,
-          'maxPriorityFeePerGas': maxPriorityFeePerGas,
-          'maxFeePerGas': maxFeePerGas,
-          'gasLimit': gasLimit,
-          'recipient': recipient,
-          'value': value,
-          'data': data,
-          'recipientAddressCase': recipientAddressCase,
-        });
+      'chainId': chainId,
+      'keypath': hex.encode(keypath),
+      'nonce': nonce,
+      'maxPriorityFeePerGas': maxPriorityFeePerGas,
+      'maxFeePerGas': maxFeePerGas,
+      'gasLimit': gasLimit,
+      'recipient': recipient,
+      'value': value,
+      'data': data,
+      'recipientAddressCase': recipientAddressCase,
+    });
 
     return result ?? Uint8List(0);
   }

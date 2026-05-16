@@ -5,8 +5,12 @@ on:
   push:
     branches: [develop, main]
 
+permissions:
+  contents: read
+
 jobs:
-  analyze-and-test:
+  flutter:
+    name: Flutter analyze + test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,5 +20,48 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      - name: dart format (check)
+        run: dart format --set-exit-if-changed --output=none lib test
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
+
+  go:
+    name: Go unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: go
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+          cache-dependency-path: go/go.sum
+      - run: go vet ./...
+      - run: go test -race -timeout 60s ./...
+
+  yaml-lint:
+    name: Workflow YAML lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: parse every workflow + action YAML
+        run: |
+          python3 - <<'PY'
+          import glob, sys, yaml
+          paths = sorted(set(
+            glob.glob('.github/**/*.yml', recursive=True) +
+            glob.glob('.github/**/*.yaml', recursive=True)
+          ))
+          bad = []
+          for p in paths:
+            try:
+              yaml.safe_load(open(p))
+              print(f'ok  {p}')
+            except Exception as e:
+              bad.append((p, e))
+              print(f'BAD {p}: {e}')
+          if bad:
+            sys.exit(1)
+          PY
