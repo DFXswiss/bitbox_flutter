@@ -49,23 +49,48 @@ abstract class BitboxUsbPlatform extends PlatformInterface {
 
   Future<bool> supportsLTC();
 
-  Future<String> getBTCXPub(int coinType, Uint8List keypath, int addressType, bool display);
+  Future<String> getBTCXPub(
+      int coinType, Uint8List keypath, int addressType, bool display);
 
   Future<String> signBTCPsbt(int coinType, String psbt);
 
-  Future<Uint8List> signBTCMessage(int chainId, Uint8List keypath, Uint8List message);
+  Future<Uint8List> signBTCMessage(
+      int chainId, Uint8List keypath, Uint8List message);
 
-  Future<String> getETHAddress(int chainId, Uint8List keypath, int outputType, bool display);
+  Future<String> getETHAddress(
+      int chainId, Uint8List keypath, int outputType, bool display);
 
-  Future<Uint8List> signETHRPLTransaction(int chainId, Uint8List keypath, String transactionData, bool isEIP1559);
+  Future<Uint8List> signETHRPLTransaction(
+      int chainId, Uint8List keypath, String transactionData, bool isEIP1559);
 
-  Future<Uint8List> signETHTransaction(int chainId, Uint8List keypath, int nonce, String gasPrice, int gasLimit, Uint8List recipient, String value, Uint8List data, int recipientAddressCase);
+  Future<Uint8List> signETHTransaction(
+      int chainId,
+      Uint8List keypath,
+      int nonce,
+      String gasPrice,
+      int gasLimit,
+      Uint8List recipient,
+      String value,
+      Uint8List data,
+      int recipientAddressCase);
 
-  Future<Uint8List> signETHTransactionEIP1559(int chainId, Uint8List keypath, int nonce, String maxPriorityFeePerGas, String maxFeePerGas, int gasLimit, Uint8List recipient, String value, Uint8List data, int recipientAddressCase);
+  Future<Uint8List> signETHTransactionEIP1559(
+      int chainId,
+      Uint8List keypath,
+      int nonce,
+      String maxPriorityFeePerGas,
+      String maxFeePerGas,
+      int gasLimit,
+      Uint8List recipient,
+      String value,
+      Uint8List data,
+      int recipientAddressCase);
 
-  Future<Uint8List> signETHMessage(int chainId, Uint8List keypath, Uint8List message);
+  Future<Uint8List> signETHMessage(
+      int chainId, Uint8List keypath, Uint8List message);
 
-  Future<Uint8List> signETHTypedMessage(int chainId, Uint8List keypath, Uint8List jsonMessage);
+  Future<Uint8List> signETHTypedMessage(
+      int chainId, Uint8List keypath, Uint8List jsonMessage);
 
   Future<bool> close();
 }

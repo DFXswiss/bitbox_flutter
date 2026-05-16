@@ -15,7 +15,7 @@ import (
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/mocks"
 	"github.com/BitBoxSwiss/bitbox02-api-go/util/semver"
-	"github.com/konstantinullrich/bitbox_flutter/u2fhid"
+	"github.com/DFXswiss/bitbox_flutter/u2fhid"
 )
 
 // fixTimezone sets the local timezone on Android. This is a workaround to the bug that on Android,
