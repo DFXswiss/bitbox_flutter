@@ -235,7 +235,6 @@ class _BitboxScreenState extends State<BitboxScreen> {
           ),
         ],
       ),
-
     ],
   );
 }
