@@ -20,8 +20,7 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
-      - name: dart format (check)
-        run: dart format --set-exit-if-changed --output=none lib test
+      - run: dart format --set-exit-if-changed --output=none lib test example/lib example/test
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
 
