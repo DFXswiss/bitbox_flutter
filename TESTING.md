@@ -2,13 +2,19 @@
 
 ## Fast PR gate
 
-Run the hardware-wallet tests that do not need a physical BitBox:
+Run the same checks the `PR checks` workflow enforces. CI fails on any of
+these, so it is cheaper to catch them locally first:
 
 ```sh
+# Flutter
+dart format --set-exit-if-changed --output=none lib test example/lib example/test
 flutter analyze --no-fatal-infos
 flutter test
+
+# Go (from go/)
 cd go
-go test ./...
+go vet ./...
+go test -race -timeout 60s ./...
 ```
 
 The Go API tests include a generic fake BitBox device. It is not
