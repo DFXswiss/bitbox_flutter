@@ -1,3 +1,7 @@
+// Demo app uses print() for runtime console feedback during the BitBox flow
+// walkthrough. The plugin itself (lib/) must stay print-free.
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';

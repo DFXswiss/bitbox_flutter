@@ -39,12 +39,10 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
 
   @override
   Future<bool> open(BitboxDevice usbDevice) async {
-    print('[bitbox_flutter] open ${usbDevice.productName}');
     final open = await methodChannel.invokeMethod<bool>(
       'open',
       usbDevice.toMap(),
     );
-    print('[bitbox_flutter] open $open');
 
     return open ?? false;
   }
@@ -58,9 +56,7 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
 
   @override
   Future<bool> initBitBox() async {
-    print('[bitbox_flutter] initBitBox');
     final result = await methodChannel.invokeMethod<bool>('initBitBox');
-    print('[bitbox_flutter] initBitBox $result');
 
     return result ?? false;
   }

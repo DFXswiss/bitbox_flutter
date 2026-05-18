@@ -8,7 +8,7 @@ these, so it is cheaper to catch them locally first:
 ```sh
 # Flutter
 dart format --set-exit-if-changed --output=none lib test example/lib example/test
-flutter analyze --no-fatal-infos
+flutter analyze --fatal-infos
 flutter test
 
 # Go (from go/)
