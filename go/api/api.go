@@ -189,6 +189,23 @@ func InitDevice() (success bool) {
 	return true
 }
 
+// DeviceStatus returns the firmware status of the paired device as a string
+// (e.g. "uninitialized", "seeded", "initialized"). It reads the cached status
+// the SDK maintains, so it does not perform a device round-trip and cannot
+// block. An empty string is returned when there is no device. Callers use this
+// after pairing to tell an unseeded device (no wallet set up yet) apart from a
+// transient empty address read.
+//
+//export DeviceStatus
+func DeviceStatus() (status string) {
+	defer recoverPanic("DeviceStatus")
+
+	if bitbox == nil {
+		return ""
+	}
+	return string(bitbox.Status())
+}
+
 //export SupportsETH
 func SupportsETH(chainId int) (supported bool) {
 	defer recoverPanic("SupportsETH")

@@ -12,6 +12,7 @@ type bitboxDevice interface {
 	Init() error
 	ChannelHash() (string, bool)
 	ChannelHashVerify(ok bool)
+	Status() firmware.Status
 	DeviceInfo() (*firmware.DeviceInfo, error)
 	RootFingerprint() ([]byte, error)
 	SupportsETH(chainID uint64) bool

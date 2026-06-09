@@ -76,6 +76,13 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
   }
 
   @override
+  Future<String> getDeviceStatus() async {
+    final result = await methodChannel.invokeMethod<String>('getDeviceStatus');
+
+    return result ?? '';
+  }
+
+  @override
   Future<Uint8List> getMasterFingerprint() async {
     final result =
         await methodChannel.invokeMethod<Uint8List>('getMasterFingerprint');

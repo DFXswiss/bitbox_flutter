@@ -1,3 +1,11 @@
+## 0.0.9
+
+* Expose `BitboxManager.getDeviceStatus()`, returning the SDK's cached firmware
+  status string (`uninitialized` / `seeded` / `initialized`). It reads the locally
+  cached status without a device round-trip, so the host app can tell an unseeded
+  device (no wallet set up yet) apart from a transient empty address read after
+  pairing instead of failing both the same way.
+
 ## 0.0.8
 
 * Android: run the blocking `initBitBox` (Noise pairing handshake) off the serial

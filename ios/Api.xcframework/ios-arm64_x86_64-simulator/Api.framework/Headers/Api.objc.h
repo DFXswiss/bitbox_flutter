@@ -45,6 +45,16 @@ FOUNDATION_EXPORT void ApiChannelHashVerify(BOOL ok);
 // skipped function DeviceInfo with unsupported parameter or return types
 
 
+/**
+ * DeviceStatus returns the firmware status of the paired device as a string
+(e.g. "uninitialized", "seeded", "initialized"). It reads the cached status
+the SDK maintains, so it does not perform a device round-trip and cannot
+block. An empty string is returned when there is no device. Callers use this
+after pairing to tell an unseeded device (no wallet set up yet) apart from a
+transient empty address read.
+ */
+FOUNDATION_EXPORT NSString* _Nonnull ApiDeviceStatus(void);
+
 FOUNDATION_EXPORT NSString* _Nonnull ApiETHGetAddress(long chainId, NSString* _Nullable keypath, long outputType, BOOL display, NSData* _Nullable contractAddress);
 
 FOUNDATION_EXPORT NSData* _Nullable ApiETHSignEIP1559(long chainId, NSString* _Nullable keypath, long nonce, NSString* _Nullable maxPriorityFeePerGas, NSString* _Nullable maxFeePerGas, long gasLimit, NSData* _Nullable recipient, NSString* _Nullable value, NSData* _Nullable data, long recipientAddressCase);
