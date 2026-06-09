@@ -1,10 +1,17 @@
-## 0.0.9
+## 0.0.10
 
 * Expose `BitboxManager.getDeviceStatus()`, returning the SDK's cached firmware
   status string (`uninitialized` / `seeded` / `initialized`). It reads the locally
   cached status without a device round-trip, so the host app can tell an unseeded
   device (no wallet set up yet) apart from a transient empty address read after
   pairing instead of failing both the same way.
+
+## 0.0.9
+
+* Android: force 16 KB ELF page alignment on the gomobile-built native libs
+  (`-extldflags=-Wl,-z,max-page-size=16384`). `libgojni.so` was the only 4 KB-aligned
+  library in the bundle; Android 15+ devices using 16 KB memory pages (and Google
+  Play) require ≥ 16 KB alignment.
 
 ## 0.0.8
 
