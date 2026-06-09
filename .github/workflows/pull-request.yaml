@@ -21,7 +21,7 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: dart format --set-exit-if-changed --output=none lib test example/lib example/test
-      - run: flutter analyze --no-fatal-infos
+      - run: flutter analyze --fatal-infos
       - run: flutter test
 
   go:

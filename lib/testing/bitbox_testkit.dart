@@ -180,66 +180,6 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
   bool _isOpen = false;
   bool _channelHashVerified;
 
-  static SimulatedBitboxPlatform install({
-    List<BitboxDevice>? devices,
-    Duration defaultDelay = Duration.zero,
-    bool requireOpen = true,
-    bool channelHashVerified = false,
-    bool startScanResult = true,
-    bool permissionResult = true,
-    bool openResult = true,
-    bool initResult = true,
-    bool channelHashVerifyResult = true,
-    bool supportsETHResult = true,
-    bool supportsERC20Result = true,
-    bool supportsLTCResult = true,
-    String? channelHash,
-    Uint8List? masterFingerprint,
-    String? btcXPub,
-    String? btcPsbt,
-    Uint8List? btcMessageSignature,
-    String? ethAddress,
-    Uint8List? ethTransactionSignature,
-    Uint8List? ethEip1559Signature,
-    Uint8List? ethRlpSignature,
-    Uint8List? ethMessageSignature,
-    Uint8List? ethTypedMessageSignature,
-    Map<String, Duration>? delays,
-    Map<String, Object>? errors,
-    Map<String, SimulatedBitboxBehavior>? behaviors,
-  }) {
-    final platform = SimulatedBitboxPlatform(
-      devices: devices,
-      defaultDelay: defaultDelay,
-      requireOpen: requireOpen,
-      channelHashVerified: channelHashVerified,
-      startScanResult: startScanResult,
-      permissionResult: permissionResult,
-      openResult: openResult,
-      initResult: initResult,
-      channelHashVerifyResult: channelHashVerifyResult,
-      supportsETHResult: supportsETHResult,
-      supportsERC20Result: supportsERC20Result,
-      supportsLTCResult: supportsLTCResult,
-      channelHash: channelHash,
-      masterFingerprint: masterFingerprint,
-      btcXPub: btcXPub,
-      btcPsbt: btcPsbt,
-      btcMessageSignature: btcMessageSignature,
-      ethAddress: ethAddress,
-      ethTransactionSignature: ethTransactionSignature,
-      ethEip1559Signature: ethEip1559Signature,
-      ethRlpSignature: ethRlpSignature,
-      ethMessageSignature: ethMessageSignature,
-      ethTypedMessageSignature: ethTypedMessageSignature,
-      delays: delays,
-      errors: errors,
-      behaviors: behaviors,
-    );
-    BitboxUsbPlatform.instance = platform;
-    return platform;
-  }
-
   bool get isOpen => _isOpen;
 
   bool get channelHashVerified => _channelHashVerified;
@@ -566,6 +506,12 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
   static Uint8List _copy(Uint8List bytes) => Uint8List.fromList(bytes);
 }
 
+/// Constructs a [SimulatedBitboxPlatform] with the given overrides and
+/// installs it as `BitboxUsbPlatform.instance`. Returns the platform so
+/// tests can drive `setDelay` / `throwOn` / `when` and inspect `calls`.
+///
+/// Save and restore `BitboxUsbPlatform.instance` in `setUp` / `tearDown`
+/// when a suite needs isolation between tests.
 SimulatedBitboxPlatform installSimulatedBitboxPlatform({
   List<BitboxDevice>? devices,
   Duration defaultDelay = Duration.zero,
@@ -593,32 +539,35 @@ SimulatedBitboxPlatform installSimulatedBitboxPlatform({
   Map<String, Duration>? delays,
   Map<String, Object>? errors,
   Map<String, SimulatedBitboxBehavior>? behaviors,
-}) =>
-    SimulatedBitboxPlatform.install(
-      devices: devices,
-      defaultDelay: defaultDelay,
-      requireOpen: requireOpen,
-      channelHashVerified: channelHashVerified,
-      startScanResult: startScanResult,
-      permissionResult: permissionResult,
-      openResult: openResult,
-      initResult: initResult,
-      channelHashVerifyResult: channelHashVerifyResult,
-      supportsETHResult: supportsETHResult,
-      supportsERC20Result: supportsERC20Result,
-      supportsLTCResult: supportsLTCResult,
-      channelHash: channelHash,
-      masterFingerprint: masterFingerprint,
-      btcXPub: btcXPub,
-      btcPsbt: btcPsbt,
-      btcMessageSignature: btcMessageSignature,
-      ethAddress: ethAddress,
-      ethTransactionSignature: ethTransactionSignature,
-      ethEip1559Signature: ethEip1559Signature,
-      ethRlpSignature: ethRlpSignature,
-      ethMessageSignature: ethMessageSignature,
-      ethTypedMessageSignature: ethTypedMessageSignature,
-      delays: delays,
-      errors: errors,
-      behaviors: behaviors,
-    );
+}) {
+  final platform = SimulatedBitboxPlatform(
+    devices: devices,
+    defaultDelay: defaultDelay,
+    requireOpen: requireOpen,
+    channelHashVerified: channelHashVerified,
+    startScanResult: startScanResult,
+    permissionResult: permissionResult,
+    openResult: openResult,
+    initResult: initResult,
+    channelHashVerifyResult: channelHashVerifyResult,
+    supportsETHResult: supportsETHResult,
+    supportsERC20Result: supportsERC20Result,
+    supportsLTCResult: supportsLTCResult,
+    channelHash: channelHash,
+    masterFingerprint: masterFingerprint,
+    btcXPub: btcXPub,
+    btcPsbt: btcPsbt,
+    btcMessageSignature: btcMessageSignature,
+    ethAddress: ethAddress,
+    ethTransactionSignature: ethTransactionSignature,
+    ethEip1559Signature: ethEip1559Signature,
+    ethRlpSignature: ethRlpSignature,
+    ethMessageSignature: ethMessageSignature,
+    ethTypedMessageSignature: ethTypedMessageSignature,
+    delays: delays,
+    errors: errors,
+    behaviors: behaviors,
+  );
+  BitboxUsbPlatform.instance = platform;
+  return platform;
+}
