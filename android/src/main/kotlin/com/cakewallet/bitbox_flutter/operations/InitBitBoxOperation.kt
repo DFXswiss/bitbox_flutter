@@ -3,6 +3,7 @@ package com.cakewallet.bitbox_flutter.operations
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import api.Api
 import com.cakewallet.bitbox_flutter.BitboxManager
 import io.flutter.plugin.common.MethodCall
@@ -35,6 +36,7 @@ class InitBitBoxOperation(manager: BitboxManager) : UsbMethodCallOperation(manag
             val success = try {
                 Api.initDevice()
             } catch (e: Throwable) {
+                Log.w("bitbox_flutter", "initDevice failed: ${e.message}")
                 false
             }
             Handler(Looper.getMainLooper()).post { result.success(success) }

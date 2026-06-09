@@ -1,6 +1,7 @@
 package com.cakewallet.bitbox_flutter.operations
 
 import android.content.Context
+import android.util.Log
 import com.cakewallet.bitbox_flutter.BitBoxException
 import com.cakewallet.bitbox_flutter.BitboxManager
 import io.flutter.plugin.common.MethodCall
@@ -18,6 +19,7 @@ class ConnectBitBoxOperation(private val manager: BitboxManager) :
             this.manager.connectBitBox(identifier!!)
             result.success(true)
         } catch (ex: BitBoxException) {
+            Log.w("bitbox_flutter", "connectBitBox failed (${ex.getErrorCode()}): ${ex.message}")
             this.manager.gracefullyReset()
             result.error(ex.getErrorCode(), ex.message, null)
         }

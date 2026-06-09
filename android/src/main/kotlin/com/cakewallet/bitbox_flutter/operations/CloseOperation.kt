@@ -1,6 +1,7 @@
 package com.cakewallet.bitbox_flutter.operations
 
 import android.content.Context
+import android.util.Log
 import com.cakewallet.bitbox_flutter.BitboxManager
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -14,7 +15,8 @@ class CloseOperation(private val manager: BitboxManager) :
     ) {
         try {
             manager.close()
-        } catch (_: Exception) {
+        } catch (ex: Exception) {
+            Log.w("bitbox_flutter", "close failed, gracefully resetting: ${ex.message}")
             manager.gracefullyReset()
         }
 
