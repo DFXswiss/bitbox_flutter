@@ -43,6 +43,8 @@ abstract class BitboxUsbPlatform extends PlatformInterface {
 
   Future<bool> channelHashVerify();
 
+  Future<String> getDeviceStatus();
+
   Future<bool> supportsETH(int chainId);
 
   Future<bool> supportsERC20(String contractAddress);

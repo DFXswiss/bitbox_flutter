@@ -17,6 +17,7 @@ final class SimulatedBitboxMethod {
   static const getMasterFingerprint = 'getMasterFingerprint';
   static const getChannelHash = 'getChannelHash';
   static const channelHashVerify = 'channelHashVerify';
+  static const getDeviceStatus = 'getDeviceStatus';
   static const supportsETH = 'supportsETH';
   static const supportsERC20 = 'supportsERC20';
   static const supportsLTC = 'supportsLTC';
@@ -66,6 +67,7 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
     this.openResult = true,
     this.initResult = true,
     this.channelHashVerifyResult = true,
+    this.deviceStatus = 'initialized',
     this.supportsETHResult = true,
     this.supportsERC20Result = true,
     this.supportsLTCResult = true,
@@ -156,6 +158,7 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
   final bool openResult;
   final bool initResult;
   final bool channelHashVerifyResult;
+  final String deviceStatus;
   final bool supportsETHResult;
   final bool supportsERC20Result;
   final bool supportsLTCResult;
@@ -275,6 +278,13 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
     _channelHashVerified = result;
     return result;
   }
+
+  @override
+  Future<String> getDeviceStatus() => _run(
+        SimulatedBitboxMethod.getDeviceStatus,
+        const <String, Object?>{},
+        deviceStatus,
+      );
 
   @override
   Future<bool> supportsETH(int chainId) => _run(
@@ -522,6 +532,7 @@ SimulatedBitboxPlatform installSimulatedBitboxPlatform({
   bool openResult = true,
   bool initResult = true,
   bool channelHashVerifyResult = true,
+  String deviceStatus = 'initialized',
   bool supportsETHResult = true,
   bool supportsERC20Result = true,
   bool supportsLTCResult = true,
@@ -550,6 +561,7 @@ SimulatedBitboxPlatform installSimulatedBitboxPlatform({
     openResult: openResult,
     initResult: initResult,
     channelHashVerifyResult: channelHashVerifyResult,
+    deviceStatus: deviceStatus,
     supportsETHResult: supportsETHResult,
     supportsERC20Result: supportsERC20Result,
     supportsLTCResult: supportsLTCResult,

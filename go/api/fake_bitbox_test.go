@@ -21,6 +21,8 @@ type fakeBitboxDevice struct {
 	channelHashOk       bool
 	channelHashVerified *bool
 
+	status firmware.Status
+
 	deviceInfo         *firmware.DeviceInfo
 	deviceInfoErr      error
 	rootFingerprint    []byte
@@ -65,6 +67,11 @@ func (f *fakeBitboxDevice) ChannelHash() (string, bool) {
 func (f *fakeBitboxDevice) ChannelHashVerify(ok bool) {
 	f.calls = append(f.calls, "ChannelHashVerify")
 	f.channelHashVerified = &ok
+}
+
+func (f *fakeBitboxDevice) Status() firmware.Status {
+	f.calls = append(f.calls, "Status")
+	return f.status
 }
 
 func (f *fakeBitboxDevice) DeviceInfo() (*firmware.DeviceInfo, error) {
@@ -155,6 +162,7 @@ func TestFakeBitboxHarnessSimulatesPairingAndCapabilities(t *testing.T) {
 		channelHash:         "PAIR-CODE",
 		channelHashOk:       true,
 		channelHashVerified: &verified,
+		status:              firmware.StatusInitialized,
 		deviceInfo:          &firmware.DeviceInfo{Name: "Simulated BitBox"},
 		rootFingerprint:     []byte{0x01, 0x02, 0x03, 0x04},
 		supportsETH:         true,
@@ -179,6 +187,9 @@ func TestFakeBitboxHarnessSimulatesPairingAndCapabilities(t *testing.T) {
 	}
 	if got := DeviceInfo().Name; got != "Simulated BitBox" {
 		t.Fatalf("expected simulated device info, got %q", got)
+	}
+	if got := DeviceStatus(); got != string(firmware.StatusInitialized) {
+		t.Fatalf("expected simulated device status, got %q", got)
 	}
 	if got := GetMasterFingerprint(); !reflect.DeepEqual(got, []byte{0x01, 0x02, 0x03, 0x04}) {
 		t.Fatalf("expected simulated root fingerprint, got %x", got)
@@ -296,6 +307,9 @@ func TestExportedAPIsReturnZeroValuesWithoutDeviceInsteadOfCrashing(t *testing.T
 	}
 	if got := DeviceInfo(); got.Name != "" {
 		t.Fatalf("expected zero device info without device, got %+v", got)
+	}
+	if got := DeviceStatus(); got != "" {
+		t.Fatalf("expected empty device status without device, got %q", got)
 	}
 	if got := ETHGetAddress(1, keypath, int(messages.ETHPubRequest_ADDRESS), false, nil); got != "" {
 		t.Fatalf("expected empty ETH address without device, got %q", got)

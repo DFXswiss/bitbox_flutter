@@ -36,6 +36,9 @@ class BitboxManager {
   Future<bool> channelHashVerify() =>
       BitboxUsbPlatform.instance.channelHashVerify();
 
+  Future<String> getDeviceStatus() =>
+      BitboxUsbPlatform.instance.getDeviceStatus();
+
   Future<bool> supportsLTC() => BitboxUsbPlatform.instance.supportsLTC();
 
   Future<bool> supportsETH(int chainId) =>
