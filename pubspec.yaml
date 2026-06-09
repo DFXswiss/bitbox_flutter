@@ -1,7 +1,9 @@
 name: bitbox_flutter
-description: "A flutter plugin for bitbox"
+description: "Flutter plugin for the BitBox02 hardware wallet over USB and BLE, supporting BTC, LTC and ETH."
 version: 0.0.1
-homepage:
+homepage: https://github.com/DFXswiss/bitbox_flutter
+repository: https://github.com/DFXswiss/bitbox_flutter
+issue_tracker: https://github.com/DFXswiss/bitbox_flutter/issues
 
 environment:
   sdk: ^3.5.0
