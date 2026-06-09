@@ -227,4 +227,23 @@ void main() {
       throwsA(isA<SimulatedBitboxStateException>()),
     );
   });
+
+  test('reports the simulated device status', () async {
+    installSimulatedBitboxPlatform();
+    final manager = BitboxManager();
+    await manager.connect((await manager.devices).single);
+
+    expect(await manager.getDeviceStatus(), 'initialized');
+  });
+
+  test('reports an unseeded device status', () async {
+    final platform = installSimulatedBitboxPlatform(
+      deviceStatus: 'uninitialized',
+    );
+    final manager = BitboxManager();
+    await manager.connect((await manager.devices).single);
+
+    expect(await manager.getDeviceStatus(), 'uninitialized');
+    expect(platform.count(SimulatedBitboxMethod.getDeviceStatus), 1);
+  });
 }

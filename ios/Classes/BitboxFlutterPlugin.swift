@@ -32,6 +32,8 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
             getChannelHash(result: result)
         case "channelHashVerify":
             channelHashVerify(result: result)
+        case "getDeviceStatus":
+            getDeviceStatus(result: result)
         case "supportsETH":
             supportsETH(call: call, result: result)
         case "supportsERC20":
@@ -186,6 +188,12 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
                 result(true)
             }
         }
+    }
+
+    private func getDeviceStatus(result: @escaping FlutterResult) {
+        // ApiDeviceStatus() reads the SDK's cached firmware status — no device
+        // round-trip — so it returns immediately without a background dispatch.
+        result(ApiDeviceStatus())
     }
 
     // MARK: - Feature Support
