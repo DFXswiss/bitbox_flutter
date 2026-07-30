@@ -23,9 +23,9 @@ void main() {
   });
 
   test('maps the empty string to null', () async {
-    // Both bridges hand through the Go layer's zero value, which is what a USB
-    // device reports until initBitBox has run the OP_INFO exchange. Callers get
-    // one absent value to check, not two.
+    // Both bridges hand through the Go layer's zero value, which is what the
+    // plugin reports until the pairing is established — initBitBox returning
+    // true is not enough. Callers get one absent value to check, not two.
     messenger.setMockMethodCallHandler(channel, (call) async => '');
 
     expect(await platform.getFirmwareVersion(), isNull);
