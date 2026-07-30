@@ -24,14 +24,14 @@
   withholds it until the pairing is established — a declined or failed pairing
   must not vouch for a channel that was never established. (The native binding
   also withholds it when the host rejects the code; `BitboxManager` never does,
-  since `channelHashVerify()` always affirms.) Note the SDK
-  reports a decline by leaving the channel hash unverified rather than by
-  returning an error, so `initBitBox()` still resolves true there; only the
-  version and the capabilities derived from it are withheld.
-* Testkit: `SimulatedBitboxPlatform.supportsLTC()` now reports false until the
-  simulated pairing is established — `initBitBox()` returning true is not
-  enough, see the new `pairingVerified` knob — matching `supportsETH()` /
-  `supportsERC20()`. A consumer test that asserted it straight after
+  since `channelHashVerify()` always affirms.) Note the SDK reports a decline by
+  leaving the channel hash unverified rather than by returning an error, so
+  `initBitBox()` still resolves true there; only the version and the
+  capabilities derived from it are withheld.
+* Testkit: `SimulatedBitboxPlatform.supportsLTC()`, `supportsETH()` and
+  `supportsERC20()` now report false until the simulated pairing is established
+  — `initBitBox()` returning true is not enough, see the new `pairingVerified`
+  knob. A consumer test that asserted any of the three straight after
   `connect()` needs an `initBitBox()` first.
 
 ## 0.0.10

@@ -22,7 +22,7 @@ Run the same gate locally — see [TESTING.md → Fast PR gate](TESTING.md#fast-
 
 ## Adding a new platform method
 
-1. **Dart side**: declare the abstract method on `BitboxUsbPlatform` (`lib/usb/bitbox_usb_platform_interface.dart`) and implement it on `BitboxUsbMethodChannel` (`lib/usb/bitbox_usb_method_channel.dart`).
+1. **Dart side**: declare the abstract method on `BitboxUsbPlatform` (`lib/usb/bitbox_usb_platform_interface.dart`) and implement it on `MethodChannelBitboxUsb` (`lib/usb/bitbox_usb_method_channel.dart`).
 2. **Go side** (gomobile-exported): add the corresponding function in `go/api/*.go`, wrapped with `defer recoverPanic("<name>")` so a Go-side crash returns a zero value instead of taking the engine down.
 3. **Native bridges**: wire the new method through `android/src/main/kotlin/.../MethodCallRegistry.kt` and the iOS handler in `ios/Classes/BitboxFlutterPlugin.swift`.
 4. **Testkit**: implement the method on `SimulatedBitboxPlatform` in `lib/testing/bitbox_testkit.dart` so consumer apps can exercise it without hardware. Add a method-name constant to `SimulatedBitboxMethod`.

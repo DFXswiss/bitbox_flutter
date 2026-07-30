@@ -90,13 +90,13 @@ The tests explicitly guard against these hardware-wallet regressions:
 - U2FHID assumptions drifting away from the iOS BLE bridge contract
 - Pairing/channel-hash behavior not being simulatable without hardware
 - An unknown firmware version being conflated with an old one. The SDK panics
-  when `Version()` is read before the device reports one — normal until
-  `initBitBox` binds the device — so `FirmwareVersion` relies on `recoverPanic`
-  to return `""`, which the Dart side maps to null. The Go test drives that
-  panic path, and the testkit withholds the version until the simulated pairing
-  is established — `initBitBox()` returning true is not enough, see its
-  `pairingVerified` knob — so a consumer's version gate cannot pass its tests
-  and then read null on hardware.
+  when `Version()` is read before the device reports one; the pairing gate
+  already answers `""` in that window, and `recoverPanic` backstops the panic
+  should it ever be reached — the Go test drives that path directly. The Dart
+  side maps `""` to null, and the testkit withholds the version until the
+  simulated pairing is established — `initBitBox()` returning true is not
+  enough, see its `pairingVerified` knob — so a consumer's version gate cannot
+  pass its tests and then read null on hardware.
 - A version answering for a pairing that never completed. Bluetooth knows the
   version before `initBitBox`, so the binding tracks whether the pairing was
   actually established and withholds the version — and the capabilities derived
