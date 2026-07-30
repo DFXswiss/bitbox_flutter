@@ -14,6 +14,7 @@ import com.cakewallet.bitbox_flutter.operations.ETHSignTransactionOperation
 import com.cakewallet.bitbox_flutter.operations.ETHSignTypedMessageOperation
 import com.cakewallet.bitbox_flutter.operations.GetChannelHashOperation
 import com.cakewallet.bitbox_flutter.operations.GetDeviceStatusOperation
+import com.cakewallet.bitbox_flutter.operations.GetFirmwareVersionOperation
 import com.cakewallet.bitbox_flutter.operations.GetDevicesOperation
 import com.cakewallet.bitbox_flutter.operations.ETHGetAddressOperation
 import com.cakewallet.bitbox_flutter.operations.ETHSignRLPTransactionOperation
@@ -55,6 +56,7 @@ class BitboxFlutterPlugin : FlutterPlugin, MethodCallHandler {
         registry.registerMethodCall("getChannelHash", GetChannelHashOperation(bitboxManager))
         registry.registerMethodCall("channelHashVerify", ChannelHashVerifyOperation(bitboxManager))
         registry.registerMethodCall("getDeviceStatus", GetDeviceStatusOperation(bitboxManager))
+        registry.registerMethodCall("getFirmwareVersion", GetFirmwareVersionOperation(bitboxManager))
         registry.registerMethodCall("getMasterFingerprint", GetMasterFingerprintOperation(bitboxManager))
         registry.registerMethodCall("supportsETH", SupportsETHOperation(bitboxManager))
         registry.registerMethodCall("supportsERC20", SupportsERC20Operation(bitboxManager))

@@ -258,9 +258,9 @@ void main() {
     expect(platform.count(SimulatedBitboxMethod.getFirmwareVersion), 1);
   });
 
-  test('reports a null firmware version on a transport that cannot tell',
+  test('reports a null firmware version when the device has not told yet',
       () async {
-    // The USB transport carries no product characteristic. Null must be
+    // A USB device reports nothing until initBitBox has run. Null must be
     // distinguishable from an old version by the caller, never conflated.
     installSimulatedBitboxPlatform(firmwareVersion: null);
     final manager = BitboxManager();
@@ -269,12 +269,17 @@ void main() {
     expect(await manager.getFirmwareVersion(), isNull);
   });
 
-  test('reads the firmware version before the channel is open', () async {
-    // On hardware the version is published on connect, before pairing, so a
-    // firmware gate must be able to consult it without an open channel.
+  test('requires an open channel to read the firmware version', () async {
+    // The version comes off the device the plugin has open, so a gate cannot
+    // consult it before connecting. The simulator must not be more permissive
+    // than hardware, or a consumer's gate passes its tests and reads null in
+    // the field.
     installSimulatedBitboxPlatform(firmwareVersion: 'v9.26.4');
     final manager = BitboxManager();
 
-    expect(await manager.getFirmwareVersion(), 'v9.26.4');
+    expect(
+      () => manager.getFirmwareVersion(),
+      throwsA(isA<SimulatedBitboxStateException>()),
+    );
   });
 }

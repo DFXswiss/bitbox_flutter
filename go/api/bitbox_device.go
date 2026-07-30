@@ -5,6 +5,7 @@ import (
 
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/messages"
+	"github.com/BitBoxSwiss/bitbox02-api-go/util/semver"
 	"github.com/btcsuite/btcd/btcutil/psbt"
 )
 
@@ -13,6 +14,7 @@ type bitboxDevice interface {
 	ChannelHash() (string, bool)
 	ChannelHashVerify(ok bool)
 	Status() firmware.Status
+	Version() *semver.SemVer
 	DeviceInfo() (*firmware.DeviceInfo, error)
 	RootFingerprint() ([]byte, error)
 	SupportsETH(chainID uint64) bool

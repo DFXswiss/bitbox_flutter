@@ -67,6 +67,20 @@ FOUNDATION_EXPORT NSData* _Nullable ApiETHSignTransaction(long chainId, NSString
 
 FOUNDATION_EXPORT NSData* _Nullable ApiETHSignTypedMessage(long chainId, NSString* _Nullable keypath, NSData* _Nullable jsonMsg);
 
+/**
+ * FirmwareVersion returns the main firmware version of the connected device,
+`v`-prefixed (e.g. "v9.26.4"). Over Bluetooth the version is handed to the
+SDK at connect time from the product characteristic; over USB the SDK infers
+it from OP_INFO while initialising, so it only becomes available once
+InitDevice has run.
+
+An empty string means the version is not known — no device, or a USB device
+that has not been initialised yet. It never means "old firmware": callers
+gating on a minimum version must treat the two apart. This is the main
+firmware version, NOT the separately versioned Bluetooth firmware.
+ */
+FOUNDATION_EXPORT NSString* _Nonnull ApiFirmwareVersion(void);
+
 FOUNDATION_EXPORT NSString* _Nonnull ApiGetChannelHash(void);
 
 FOUNDATION_EXPORT void ApiGetDevice(id<ApiGoReadWriteCloserInterface> _Nullable device);

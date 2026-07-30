@@ -84,15 +84,13 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
 
   @override
   Future<String?> getFirmwareVersion() async {
-    // The USB platform does not register this method, so an older or
-    // USB-only host answers with MissingPluginException rather than a value.
-    // That is the same "cannot report a version" case as a null result, and
-    // must not be mistaken for old firmware — see the interface doc.
-    try {
-      return await methodChannel.invokeMethod<String>('getFirmwareVersion');
-    } on MissingPluginException {
-      return null;
-    }
+    final result =
+        await methodChannel.invokeMethod<String>('getFirmwareVersion');
+
+    // Both bridges return the Go layer's empty string when the version is not
+    // known yet. Collapse it to null so callers have one absent value to
+    // check, not two — see the interface doc.
+    return (result == null || result.isEmpty) ? null : result;
   }
 
   @override

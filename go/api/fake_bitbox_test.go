@@ -5,10 +5,12 @@ import (
 	"errors"
 	"math/big"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/messages"
+	"github.com/BitBoxSwiss/bitbox02-api-go/util/semver"
 	"github.com/btcsuite/btcd/btcutil/psbt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -22,6 +24,10 @@ type fakeBitboxDevice struct {
 	channelHashVerified *bool
 
 	status firmware.Status
+
+	// version is nil when the device has not reported one yet, which makes
+	// Version() panic exactly like the SDK does before Init.
+	version *semver.SemVer
 
 	deviceInfo         *firmware.DeviceInfo
 	deviceInfoErr      error
@@ -72,6 +78,14 @@ func (f *fakeBitboxDevice) ChannelHashVerify(ok bool) {
 func (f *fakeBitboxDevice) Status() firmware.Status {
 	f.calls = append(f.calls, "Status")
 	return f.status
+}
+
+func (f *fakeBitboxDevice) Version() *semver.SemVer {
+	f.calls = append(f.calls, "Version")
+	if f.version == nil {
+		panic("version not set; Init() must be called first")
+	}
+	return f.version
 }
 
 func (f *fakeBitboxDevice) DeviceInfo() (*firmware.DeviceInfo, error) {
@@ -163,6 +177,7 @@ func TestFakeBitboxHarnessSimulatesPairingAndCapabilities(t *testing.T) {
 		channelHashOk:       true,
 		channelHashVerified: &verified,
 		status:              firmware.StatusInitialized,
+		version:             semver.NewSemVer(9, 26, 4),
 		deviceInfo:          &firmware.DeviceInfo{Name: "Simulated BitBox"},
 		rootFingerprint:     []byte{0x01, 0x02, 0x03, 0x04},
 		supportsETH:         true,
@@ -190,6 +205,10 @@ func TestFakeBitboxHarnessSimulatesPairingAndCapabilities(t *testing.T) {
 	}
 	if got := DeviceStatus(); got != string(firmware.StatusInitialized) {
 		t.Fatalf("expected simulated device status, got %q", got)
+	}
+	// The `v` prefix is added by FirmwareVersion; semver.String() omits it.
+	if got := FirmwareVersion(); got != "v9.26.4" {
+		t.Fatalf("expected simulated firmware version, got %q", got)
 	}
 	if got := GetMasterFingerprint(); !reflect.DeepEqual(got, []byte{0x01, 0x02, 0x03, 0x04}) {
 		t.Fatalf("expected simulated root fingerprint, got %x", got)
@@ -253,6 +272,26 @@ func ptr[T any](value T) *T {
 	return &value
 }
 
+// A USB device carries no version until InitDevice has run the OP_INFO
+// exchange, and the SDK panics rather than returning nil in that window. The
+// gomobile boundary must absorb it: an empty string means "not known yet", and
+// a caller gating on a minimum version must not read that as old firmware.
+func TestFirmwareVersionReturnsEmptyBeforeTheDeviceReportsOne(t *testing.T) {
+	fake := &fakeBitboxDevice{status: firmware.StatusInitialized}
+	withFakeBitbox(t, fake)
+
+	if got := FirmwareVersion(); got != "" {
+		t.Fatalf("expected empty firmware version before init, got %q", got)
+	}
+	if !slices.Contains(fake.calls, "Version") {
+		t.Fatal("expected FirmwareVersion to consult the device")
+	}
+	// The panic must not have poisoned the binding: the next call still works.
+	if got := DeviceStatus(); got != string(firmware.StatusInitialized) {
+		t.Fatalf("expected the binding to survive the panic, got %q", got)
+	}
+}
+
 func TestFakeBitboxHarnessSimulatesErrorsAndPanicsWithoutCrashing(t *testing.T) {
 	fake := &fakeBitboxDevice{
 		initErr:                   errors.New("init failed"),
@@ -310,6 +349,9 @@ func TestExportedAPIsReturnZeroValuesWithoutDeviceInsteadOfCrashing(t *testing.T
 	}
 	if got := DeviceStatus(); got != "" {
 		t.Fatalf("expected empty device status without device, got %q", got)
+	}
+	if got := FirmwareVersion(); got != "" {
+		t.Fatalf("expected empty firmware version without device, got %q", got)
 	}
 	if got := ETHGetAddress(1, keypath, int(messages.ETHPubRequest_ADDRESS), false, nil); got != "" {
 		t.Fatalf("expected empty ETH address without device, got %q", got)

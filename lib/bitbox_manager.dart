@@ -40,8 +40,8 @@ class BitboxManager {
       BitboxUsbPlatform.instance.getDeviceStatus();
 
   /// The connected device's main firmware version, e.g. `"v9.26.4"`, or null
-  /// when the transport cannot report one (USB). Null is not "old firmware" —
-  /// see [BitboxUsbPlatform.getFirmwareVersion].
+  /// when it is not known yet. Null is not "old firmware" — see
+  /// [BitboxUsbPlatform.getFirmwareVersion].
   Future<String?> getFirmwareVersion() =>
       BitboxUsbPlatform.instance.getFirmwareVersion();
 

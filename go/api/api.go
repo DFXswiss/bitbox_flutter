@@ -206,6 +206,30 @@ func DeviceStatus() (status string) {
 	return string(bitbox.Status())
 }
 
+// FirmwareVersion returns the main firmware version of the connected device,
+// `v`-prefixed (e.g. "v9.26.4"). Over Bluetooth the version is handed to the
+// SDK at connect time from the product characteristic; over USB the SDK infers
+// it from OP_INFO while initialising, so it only becomes available once
+// InitDevice has run.
+//
+// An empty string means the version is not known — no device, or a USB device
+// that has not been initialised yet. It never means "old firmware": callers
+// gating on a minimum version must treat the two apart. This is the main
+// firmware version, NOT the separately versioned Bluetooth firmware.
+//
+//export FirmwareVersion
+func FirmwareVersion() (version string) {
+	defer recoverPanic("FirmwareVersion")
+
+	if bitbox == nil {
+		return ""
+	}
+	// Version() panics when the version is not known yet, which is the normal
+	// state for USB before InitDevice. recoverPanic turns that into the ""
+	// zero value, so the not-known case stays indistinguishable from no device.
+	return "v" + bitbox.Version().String()
+}
+
 //export SupportsETH
 func SupportsETH(chainId int) (supported bool) {
 	defer recoverPanic("SupportsETH")

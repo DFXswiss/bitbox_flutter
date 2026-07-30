@@ -89,6 +89,13 @@ The tests explicitly guard against these hardware-wallet regressions:
 - iOS BLE read timeout regressing from 60 seconds to 10 seconds
 - U2FHID assumptions drifting away from the iOS BLE bridge contract
 - Pairing/channel-hash behavior not being simulatable without hardware
+- An unknown firmware version being conflated with an old one. The SDK panics
+  when `Version()` is read before the device reports one — normal for USB until
+  `initBitBox` runs the `OP_INFO` exchange — so `FirmwareVersion` relies on
+  `recoverPanic` to return `""`, which the Dart side maps to null. The Go test
+  drives that panic path, and the testkit refuses the call on a closed channel,
+  so a consumer's version gate cannot pass its tests and then read null on
+  hardware.
 - ETH/BTC success, error, and panic flows not being simulatable without hardware
 - App-level Flutter flows not being testable with deterministic BitBox delays
   and aborts

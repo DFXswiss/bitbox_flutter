@@ -22,20 +22,17 @@ void main() {
     expect(methods, ['getFirmwareVersion']);
   });
 
-  test('returns null when the platform has no version to report', () async {
-    // iOS before the product characteristic has been read, or no peripheral.
-    messenger.setMockMethodCallHandler(channel, (call) async => null);
+  test('maps the empty string to null', () async {
+    // Both bridges hand through the Go layer's zero value, which is what a USB
+    // device reports until initBitBox has run the OP_INFO exchange. Callers get
+    // one absent value to check, not two.
+    messenger.setMockMethodCallHandler(channel, (call) async => '');
 
     expect(await platform.getFirmwareVersion(), isNull);
   });
 
-  test('returns null when the platform does not implement the method',
-      () async {
-    // The USB platform registers no handler for this call, because USB carries
-    // no product characteristic. That must surface as null rather than a
-    // MissingPluginException escaping into the app — an exception here would
-    // read as a device fault on every Android device.
-    messenger.setMockMethodCallHandler(channel, null);
+  test('returns null when the platform reports no version', () async {
+    messenger.setMockMethodCallHandler(channel, (call) async => null);
 
     expect(await platform.getFirmwareVersion(), isNull);
   });

@@ -198,16 +198,12 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
         result(ApiDeviceStatus())
     }
 
-    /// The main firmware version, e.g. `"v9.26.4"`, read from the already-known
-    /// product characteristic rather than from the device over the wire. Like
-    /// getDeviceStatus this needs no round-trip, and it is readable as soon as
-    /// the peripheral connects — before pairing.
-    ///
-    /// Nil when no peripheral is connected, or the characteristic has not been
-    /// read yet. Note this is the main firmware version, NOT the separately
-    /// versioned Bluetooth firmware.
     private func getFirmwareVersion(result: @escaping FlutterResult) {
-        result(bluetoothManager.parseProduct()?.version)
+        // ApiFirmwareVersion() reads the version the SDK already holds — no
+        // device round-trip — so it returns immediately without a background
+        // dispatch. Empty until the device is opened; the Dart side maps that
+        // to null.
+        result(ApiFirmwareVersion())
     }
 
     // MARK: - Feature Support

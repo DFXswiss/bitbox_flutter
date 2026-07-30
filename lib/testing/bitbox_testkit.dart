@@ -162,7 +162,7 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
   final bool channelHashVerifyResult;
   final String deviceStatus;
 
-  /// Set to null to simulate a transport that cannot report a version (USB).
+  /// Set to null to simulate a device that has not reported a version yet.
   final String? firmwareVersion;
   final bool supportsETHResult;
   final bool supportsERC20Result;
@@ -291,15 +291,11 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
         deviceStatus,
       );
 
-  // needsOpen: false — on a real device the version comes off the product
-  // characteristic as soon as the peripheral connects, before pairing, so a
-  // gate is free to consult it before the channel is open.
   @override
   Future<String?> getFirmwareVersion() => _run<String?>(
         SimulatedBitboxMethod.getFirmwareVersion,
         const <String, Object?>{},
         firmwareVersion,
-        needsOpen: false,
       );
 
   @override

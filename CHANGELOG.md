@@ -1,3 +1,13 @@
+## 0.0.11
+
+* Expose `BitboxManager.getFirmwareVersion()`, returning the connected device's
+  main firmware version `v`-prefixed (e.g. `v9.26.4`). Over Bluetooth the version
+  comes from the product characteristic published while pairing, over USB the SDK
+  infers it from `OP_INFO` during `initBitBox`; neither costs a device round-trip.
+  Null means the version is not known yet — no device, or a USB device not yet
+  initialised — and never "old firmware", so a host gating on a minimum version
+  must treat the two apart and retry rather than latch.
+
 ## 0.0.10
 
 * Expose `BitboxManager.getDeviceStatus()`, returning the SDK's cached firmware
