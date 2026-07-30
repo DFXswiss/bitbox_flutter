@@ -62,22 +62,50 @@ func TestIOSPluginCloseTearsDownThroughHandleDisconnect(t *testing.T) {
 }
 
 // Android's half of the same invariant. Closing must release, and opening must
-// release before it rebinds, so a failed open cannot leave the previous device
-// answering — Api.getDevice only runs on the success path.
+// release BEFORE it rebinds — connectBitBox calls Api.getDevice on the success
+// path, so a release after it would drop the device that was just bound.
 func TestAndroidReleasesTheDeviceOnCloseAndConnect(t *testing.T) {
-	for _, file := range []string{
-		"CloseOperation.kt",
-		"ConnectBitBoxOperation.kt",
-	} {
-		path := "../../android/src/main/kotlin/com/cakewallet/bitbox_flutter/operations/" + file
-		contentBytes, err := os.ReadFile(path)
+	const dir = "../../android/src/main/kotlin/com/cakewallet/bitbox_flutter/operations/"
+
+	for _, file := range []string{"CloseOperation.kt", "ConnectBitBoxOperation.kt"} {
+		body, err := kotlinMethodBody(t, dir+file, "override fun onMethodCall(")
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("%s: %v", file, err)
 		}
-		if !containsCall(string(contentBytes), "Api.releaseDevice()") {
-			t.Fatalf("%s must call Api.releaseDevice(), or a device that is gone keeps answering", file)
+		if !containsCall(body, "Api.releaseDevice()") {
+			t.Fatalf("%s must call Api.releaseDevice() in onMethodCall, or a device that is gone keeps answering", file)
 		}
 	}
+
+	body, err := kotlinMethodBody(t, dir+"ConnectBitBoxOperation.kt", "override fun onMethodCall(")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Index(body, "Api.releaseDevice()") > strings.Index(body, "connectBitBox(") {
+		t.Fatal("ConnectBitBoxOperation must release before connectBitBox rebinds, or it drops the device it just bound")
+	}
+}
+
+// kotlinMethodBody returns the source between a method's signature and the
+// first closing brace at the enclosing indentation, failing loudly rather than
+// degrading into a file-wide search.
+func kotlinMethodBody(t *testing.T, path, signature string) (string, error) {
+	t.Helper()
+
+	contentBytes, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	_, after, found := strings.Cut(string(contentBytes), signature)
+	if !found {
+		return "", errors.New("method not found — this source assertion needs updating")
+	}
+	body, _, closed := strings.Cut(after, "\n    }")
+	if !closed {
+		return "", errors.New("could not find the end of the method — this source assertion needs updating")
+	}
+	return body, nil
 }
 
 // swiftFunctionBody returns the source between a function's opening brace and

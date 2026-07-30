@@ -47,10 +47,11 @@ abstract class BitboxUsbPlatform extends PlatformInterface {
 
   /// The main firmware version of the connected device, e.g. `"v9.26.4"`.
   ///
-  /// Available once [initBitBox] has succeeded — on BOTH transports, not just
-  /// USB. [open] alone is not enough: it establishes the link, while
-  /// [initBitBox] is what binds the device the version is read from. Reading it
-  /// afterwards needs no device round-trip.
+  /// Available once the pairing has been established — on BOTH transports, not
+  /// just USB. [open] alone is not enough: it establishes the link, while
+  /// [initBitBox] is what binds the device the version is read from. Nor is
+  /// [initBitBox] returning true sufficient: it still resolves true when the
+  /// user declines on the device. Reading it afterwards needs no round-trip.
   ///
   /// Null means the version is not known — before [initBitBox] or after one
   /// whose pairing was not established (a decline included, which [initBitBox]

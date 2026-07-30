@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
@@ -458,6 +459,35 @@ func TestFirmwareVersionStaysUnknownWhenThePairingIsDeclined(t *testing.T) {
 	}
 }
 
+// The host rejecting the pairing code repudiates the channel from this side.
+// The SDK marks the status but leaves its own device-verified flag set, so the
+// binding has to clear its own.
+func TestHostRejectingThePairingClearsTheVersion(t *testing.T) {
+	fake := &fakeBitboxDevice{
+		channelHash:   "PAIR-CODE",
+		channelHashOk: true,
+		version:       semver.NewSemVer(9, 26, 4),
+		supportsETH:   true,
+	}
+	withFakeBitbox(t, fake)
+
+	if !InitDevice() {
+		t.Fatal("expected simulated init to succeed")
+	}
+	if got := FirmwareVersion(); got != "v9.26.4" {
+		t.Fatalf("expected the version after the device confirmed, got %q", got)
+	}
+
+	ChannelHashVerify(false)
+
+	if got := FirmwareVersion(); got != "" {
+		t.Fatalf("expected no version after the host rejected the code, got %q", got)
+	}
+	if SupportsETH(1) {
+		t.Fatal("expected no ETH support after the host rejected the code")
+	}
+}
+
 // A second init that fails must not leave the first one's success answering.
 // Android re-inits on the bound device without reopening, so nothing else
 // would clear it.
@@ -531,7 +561,10 @@ func TestDeviceStateIsSafeUnderConcurrentReplacement(t *testing.T) {
 		version:          semver.NewSemVer(9, 26, 4),
 	}
 
-	var wg sync.WaitGroup
+	var (
+		wg           sync.WaitGroup
+		versionsSeen atomic.Int64
+	)
 	for i := 0; i < 8; i++ {
 		wg.Add(2)
 		go func() {
@@ -549,7 +582,11 @@ func TestDeviceStateIsSafeUnderConcurrentReplacement(t *testing.T) {
 			for j := 0; j < 200; j++ {
 				// Either answer is legitimate; the point is that no reader can
 				// observe a half-replaced device.
-				if got := FirmwareVersion(); got != "" && got != "v9.26.4" {
+				switch got := FirmwareVersion(); got {
+				case "v9.26.4":
+					versionsSeen.Add(1)
+				case "":
+				default:
 					t.Errorf("observed a torn firmware version: %q", got)
 				}
 				DeviceStatus()
@@ -557,6 +594,12 @@ func TestDeviceStateIsSafeUnderConcurrentReplacement(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+
+	// Without this the test would still pass if the writer stopped marking the
+	// device initialised, leaving the readers unable to see anything but "".
+	if versionsSeen.Load() == 0 {
+		t.Fatal("no reader ever observed the connected device's version")
+	}
 }
 
 // Attaching a USB device after a Bluetooth device whose version did not parse

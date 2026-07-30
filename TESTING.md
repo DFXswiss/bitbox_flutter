@@ -106,11 +106,14 @@ The tests explicitly guard against these hardware-wallet regressions:
 - A device that is gone still answering. On iOS both `handleDisconnect` and
   `connect(to:)` call `ReleaseDevice`, since nothing rebinds the Go side until
   `initBitBox` — so a peripheral that drops on its own, and one that is replaced
-  without closing first, both clear the binding. Pinned from CI by source
-  assertions on `Bluetooth.swift` and `BitboxFlutterPlugin.swift`, the same way
-  the 60s read timeout is, plus Go and testkit coverage. Those assertions ignore
-  commented-out calls and fail loudly if they can no longer find the function,
-  rather than degrading into a file-wide search.
+  without closing first, both clear the binding. Android releases in
+  `CloseOperation` and, before the rebind, in `ConnectBitBoxOperation`. All four
+  are pinned from CI by source assertions on `Bluetooth.swift`,
+  `BitboxFlutterPlugin.swift` and the two Kotlin operations, the same way the
+  60s read timeout is, plus Go and testkit coverage. Those assertions scope to
+  the enclosing function, ignore commented-out calls, check the
+  release-before-rebind ordering on the connect path, and fail loudly if they
+  can no longer find the function rather than degrading into a file-wide search.
 - The placeholder version `GetDeviceWithInfo` substitutes when the device's own
   version string does not parse escaping as if it were the device's. It is
   withheld from `FirmwareVersion` *and* from `SupportsETH` / `SupportsERC20`,

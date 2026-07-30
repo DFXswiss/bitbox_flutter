@@ -1,13 +1,14 @@
 ## 0.0.11
 
 * Expose `BitboxManager.getFirmwareVersion()`, returning the connected device's
-  main firmware version `v`-prefixed (e.g. `v9.26.4`). It is readable once
-  `initBitBox()` has succeeded, on both transports, and costs no device
+  main firmware version `v`-prefixed (e.g. `v9.26.4`). It is readable once the
+  pairing has been established, on both transports, and costs no device
   round-trip afterwards. Null means the version is not known — before
-  `initBitBox`, after `close`, or when the device reported a version that could
-  not be parsed — and never "old firmware", so a host gating on a minimum
-  version must treat the two apart and refuse rather than pass when it is
-  absent.
+  `initBitBox`, after a pairing the device declined (which `initBitBox()` still
+  reports as true, see below), after `close`, or when the device reported a
+  version that could not be parsed — and never "old firmware", so a host gating
+  on a minimum version must treat the two apart and refuse rather than pass
+  when it is absent.
 * Disconnecting now also releases the device inside the native binding — on an
   explicit `close()`, on a peripheral that drops on its own, and when connecting
   to another device without closing first. Previously the binding kept the

@@ -40,8 +40,10 @@ class BitboxManager {
       BitboxUsbPlatform.instance.getDeviceStatus();
 
   /// The connected device's main firmware version, e.g. `"v9.26.4"`, available
-  /// once [initBitBox] has succeeded, or null when it is not known. Null is not
-  /// "old firmware" — see [BitboxUsbPlatform.getFirmwareVersion].
+  /// once the pairing has been established, or null when it is not known.
+  /// [initBitBox] returning true is not sufficient — it still resolves true
+  /// when the user declines the pairing on the device, and this stays null.
+  /// Null is not "old firmware" — see [BitboxUsbPlatform.getFirmwareVersion].
   Future<String?> getFirmwareVersion() =>
       BitboxUsbPlatform.instance.getFirmwareVersion();
 

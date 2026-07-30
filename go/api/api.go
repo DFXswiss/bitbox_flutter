@@ -191,6 +191,12 @@ func ChannelHashVerify(ok bool) {
 		return
 	}
 	device.ChannelHashVerify(ok)
+	if !ok {
+		// The host rejected the code, so the channel is repudiated from this
+		// side too and must stop answering a version gate. The SDK marks the
+		// status but leaves its own device-verified flag set.
+		setInitialised(device, false)
+	}
 }
 
 //export InitDevice
@@ -239,8 +245,9 @@ func DeviceStatus() (status string) {
 }
 
 // FirmwareVersion returns the main firmware version of the connected device,
-// `v`-prefixed (e.g. "v9.26.4"). It becomes available once InitDevice has run:
-// over Bluetooth the version reaches the SDK with GetDeviceWithInfo, over USB
+// `v`-prefixed (e.g. "v9.26.4"). It becomes available once the pairing has
+// been established — InitDevice returning true is not sufficient, see below.
+// Over Bluetooth the version reaches the SDK with GetDeviceWithInfo, over USB
 // the SDK infers it from OP_INFO while initialising. Reading it afterwards
 // costs no device round-trip.
 //
