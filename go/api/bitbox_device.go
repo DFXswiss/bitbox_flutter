@@ -70,12 +70,12 @@ type bitboxDevice interface {
 	) (*firmware.BTCSignMessageResult, error)
 }
 
-// deviceMu guards bitbox and versionIsSynthetic, which belong together: they
-// describe one connected device and are replaced as a pair. The bridges write
-// them from the thread that handles close/disconnect while a signature or the
-// pairing handshake is still in flight on another, so an unsynchronised
-// interface write could be observed half-applied — a fault the recoverPanic
-// boundary could not catch.
+// deviceMu guards bitbox, versionIsSynthetic and deviceInitialised, which
+// belong together: they describe one connected device and are replaced as a
+// set. The bridges write them from the thread that handles close/disconnect
+// while a signature or the pairing handshake is still in flight on another, so
+// an unsynchronised interface write could be observed half-applied — a fault
+// the recoverPanic boundary could not catch.
 var (
 	deviceMu           sync.RWMutex
 	bitbox             bitboxDevice
@@ -105,14 +105,14 @@ func setDevice(device bitboxDevice, versionSynthetic bool) {
 	deviceInitialised = false
 }
 
-// markInitialised records that InitDevice succeeded, but only while device is
-// still the connected one — a disconnect during the pairing wait must not be
+// setInitialised records the outcome of an init attempt, but only while device
+// is still the connected one — a disconnect during the pairing wait must not be
 // undone by the init that was already in flight.
-func markInitialised(device bitboxDevice) {
+func setInitialised(device bitboxDevice, initialised bool) {
 	deviceMu.Lock()
 	defer deviceMu.Unlock()
 
 	if bitbox == device {
-		deviceInitialised = true
+		deviceInitialised = initialised
 	}
 }

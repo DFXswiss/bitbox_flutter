@@ -53,8 +53,9 @@ abstract class BitboxUsbPlatform extends PlatformInterface {
   /// afterwards needs no device round-trip.
   ///
   /// Null means the version is not known — before [initBitBox] or after one
-  /// that failed (a declined pairing included), after [close], or when the
-  /// device reported a version that could not be parsed. It never
+  /// whose pairing was not established (a decline included, which [initBitBox]
+  /// itself still reports as true), after [close], or when the device reported
+  /// a version that could not be parsed. It never
   /// means "old firmware": callers gating on a minimum version must treat the
   /// two apart, and refuse rather than pass when the version is absent.
   ///

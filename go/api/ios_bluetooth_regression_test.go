@@ -61,6 +61,25 @@ func TestIOSPluginCloseTearsDownThroughHandleDisconnect(t *testing.T) {
 	}
 }
 
+// Android's half of the same invariant. Closing must release, and opening must
+// release before it rebinds, so a failed open cannot leave the previous device
+// answering — Api.getDevice only runs on the success path.
+func TestAndroidReleasesTheDeviceOnCloseAndConnect(t *testing.T) {
+	for _, file := range []string{
+		"CloseOperation.kt",
+		"ConnectBitBoxOperation.kt",
+	} {
+		path := "../../android/src/main/kotlin/com/cakewallet/bitbox_flutter/operations/" + file
+		contentBytes, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !containsCall(string(contentBytes), "Api.releaseDevice()") {
+			t.Fatalf("%s must call Api.releaseDevice(), or a device that is gone keeps answering", file)
+		}
+	}
+}
+
 // swiftFunctionBody returns the source between a function's opening brace and
 // the first closing brace at the enclosing indentation. It fails rather than
 // returning a best guess, so a reformat degrades these guards loudly instead of

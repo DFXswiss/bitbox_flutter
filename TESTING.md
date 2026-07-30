@@ -97,9 +97,12 @@ The tests explicitly guard against these hardware-wallet regressions:
   so a consumer's version gate cannot pass its tests and then read null on
   hardware.
 - A version answering for a pairing that never completed. Bluetooth knows the
-  version before `initBitBox`, so the binding tracks whether init actually
-  succeeded and withholds the version — and the capabilities derived from it —
-  until then. Covered for a declined pairing on the Go side and in the testkit.
+  version before `initBitBox`, so the binding tracks whether the pairing was
+  actually established and withholds the version — and the capabilities derived
+  from it — until then. The signal is the channel hash being device-verified,
+  NOT `Init()` returning without error: the SDK returns nil on a decline, having
+  already dropped both ciphers. Covered on the Go side for a decline, a failed
+  init, a failed re-init, and an init that lands after the device was replaced.
 - A device that is gone still answering. On iOS both `handleDisconnect` and
   `connect(to:)` call `ReleaseDevice`, since nothing rebinds the Go side until
   `initBitBox` — so a peripheral that drops on its own, and one that is replaced
@@ -116,11 +119,12 @@ The tests explicitly guard against these hardware-wallet regressions:
   testkit applies the same rule to its configured version, so a consumer's
   capability gate does not pass against the simulator and read false on
   hardware. A behaviour installed with `when` moves only the method it targets.
-- `bitbox` and its synthetic-version flag being written without synchronisation.
-  They are replaced as a pair under `deviceMu`, and every export takes a single
-  snapshot, because close/disconnect runs on a different thread than an
-  in-flight signature or pairing handshake. A dedicated test drives readers and
-  writers concurrently, so `go test -race` fails if the lock is removed.
+- `bitbox`, its synthetic-version flag and its initialised flag being written
+  without synchronisation. They are replaced as a set under `deviceMu`, and
+  every export takes a single snapshot, because close/disconnect runs on a
+  different thread than an in-flight signature or pairing handshake. A dedicated
+  test drives readers and writers concurrently, so `go test -race` fails if the
+  lock is removed.
 - ETH/BTC success, error, and panic flows not being simulatable without hardware
 - App-level Flutter flows not being testable with deterministic BitBox delays
   and aborts

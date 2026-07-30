@@ -351,14 +351,16 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
 
   /// Reads the configured [firmwareVersion], not the result of
   /// [getFirmwareVersion]: consulting that would log a second call and run any
-  /// behaviour installed with [when] twice. A [when] override therefore moves
-  /// [getFirmwareVersion] alone — override [supportsETHResult] alongside it to
-  /// move the capabilities.
+  /// behaviour installed with [when] twice. The capabilities therefore follow
+  /// the configured version — a [when] override that supplies one does not
+  /// enable them, so set [firmwareVersion] itself to drive both.
   bool get _hasKnownVersion => _isInitialised && firmwareVersion != null;
 
-  // The product is as unknown as the version until initBitBox has bound the
-  // device, and the SDK reads it to answer this — so hardware says false
-  // before then, whatever the device turns out to support.
+  // Product-derived rather than version-derived, so the plugin can still answer
+  // it after a failed pairing. The simulator is deliberately stricter and waits
+  // for a successful initBitBox: before that the plugin answers false anyway
+  // (on USB the product is not known yet, on Bluetooth nothing is bound), and a
+  // consumer is better served by a gate that opens once, on success.
   @override
   Future<bool> supportsLTC() async {
     final supported = await _run(

@@ -20,7 +20,14 @@
   placeholder). Both track `getFirmwareVersion()` returning null.
 * Over Bluetooth the version is known before pairing, but `getFirmwareVersion()`
   withholds it until `initBitBox()` succeeds — a declined or failed pairing must
-  not vouch for a channel that was never established.
+  not vouch for a channel that was never established. Note the SDK reports a
+  decline by leaving the channel hash unverified rather than by returning an
+  error, so `initBitBox()` still resolves true there; only the version and the
+  capabilities derived from it are withheld.
+* Testkit: `SimulatedBitboxPlatform.supportsLTC()` now reports false until
+  `initBitBox()` has run, matching `supportsETH()` / `supportsERC20()`. A
+  consumer test that asserted it straight after `connect()` needs an
+  `initBitBox()` first.
 
 ## 0.0.10
 

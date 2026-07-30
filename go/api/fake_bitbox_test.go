@@ -171,7 +171,7 @@ func snapshotDevice() func() {
 	return func() {
 		setDevice(device, versionSynthetic)
 		if initialised {
-			markInitialised(device)
+			setInitialised(device, true)
 		}
 	}
 }
@@ -293,14 +293,17 @@ func ptr[T any](value T) *T {
 // gomobile boundary must absorb it: an empty string means "not known yet", and
 // a caller gating on a minimum version must not read that as old firmware.
 func TestFirmwareVersionReturnsEmptyBeforeTheDeviceReportsOne(t *testing.T) {
-	fake := &fakeBitboxDevice{status: firmware.StatusInitialized}
+	fake := &fakeBitboxDevice{
+		status:        firmware.StatusInitialized,
+		channelHashOk: true,
+	}
 	withFakeBitbox(t, fake)
 
 	if !InitDevice() {
 		t.Fatal("expected simulated init to succeed")
 	}
 	if got := FirmwareVersion(); got != "" {
-		t.Fatalf("expected empty firmware version before init, got %q", got)
+		t.Fatalf("expected empty firmware version from a device that reported none, got %q", got)
 	}
 	if !slices.Contains(fake.calls, "Version") {
 		t.Fatal("expected FirmwareVersion to consult the device")
@@ -316,8 +319,9 @@ func TestFirmwareVersionReturnsEmptyBeforeTheDeviceReportsOne(t *testing.T) {
 // would clear a device it never inspected.
 func TestReleaseDeviceClearsTheDeviceSoStaleStateIsNotReported(t *testing.T) {
 	fake := &fakeBitboxDevice{
-		status:  firmware.StatusInitialized,
-		version: semver.NewSemVer(9, 26, 4),
+		status:        firmware.StatusInitialized,
+		channelHashOk: true,
+		version:       semver.NewSemVer(9, 26, 4),
 	}
 	withFakeBitbox(t, fake)
 
@@ -362,7 +366,7 @@ func TestGetDeviceWithInfoWithholdsAnUnparseableVersion(t *testing.T) {
 	// here is the version parsing, not the handshake.
 	initialiseCurrentDevice := func() {
 		device, _, _ := currentDevice()
-		markInitialised(device)
+		setInitialised(device, true)
 	}
 
 	GetDeviceWithInfo(nullTransport{}, "v9.26.4", "bb02p-multi")
@@ -399,14 +403,14 @@ func TestGetDeviceWithInfoWithholdsAnUnparseableVersion(t *testing.T) {
 	}
 }
 
-// A device whose init did not succeed -- a declined pairing, a failed noise
-// handshake -- must not answer a version gate. Over Bluetooth the version is
-// known from the product characteristic before init even starts, so without
-// the initialised flag the binding would happily vouch for a channel that was
-// never established.
+// A device whose init did not succeed -- the transport dropped, the handshake
+// failed -- must not answer a version gate. Over Bluetooth the version is known
+// from the product characteristic before init even starts, so without the
+// initialised flag the binding would vouch for a channel never established.
 func TestFirmwareVersionStaysUnknownWhenInitFails(t *testing.T) {
 	fake := &fakeBitboxDevice{
-		initErr:        errors.New("pairing declined"),
+		initErr:        errors.New("transport dropped"),
+		channelHashOk:  true,
 		status:         firmware.StatusInitialized,
 		version:        semver.NewSemVer(9, 26, 4),
 		supportsETH:    true,
@@ -423,6 +427,83 @@ func TestFirmwareVersionStaysUnknownWhenInitFails(t *testing.T) {
 	}
 	if SupportsETH(1) || SupportsERC20("0xToken") {
 		t.Fatal("expected no version-derived capabilities after a failed init")
+	}
+}
+
+// The SDK returns no error when the user declines the pairing on the device:
+// it drops both ciphers, sets StatusPairingFailed and leaves the channel hash
+// unverified, then returns nil. Init succeeding is therefore not the same as
+// pairing succeeding, and only the latter may answer a version gate.
+func TestFirmwareVersionStaysUnknownWhenThePairingIsDeclined(t *testing.T) {
+	fake := &fakeBitboxDevice{
+		channelHash:    "PAIR-CODE",
+		channelHashOk:  false, // declined on the device
+		status:         firmware.StatusPairingFailed,
+		version:        semver.NewSemVer(9, 26, 4),
+		supportsETH:    true,
+		supportedERC20: map[string]bool{"0xToken": true},
+	}
+	withFakeBitbox(t, fake)
+
+	// Init itself reports success — that is the trap.
+	if !InitDevice() {
+		t.Fatal("expected the simulated init call itself to succeed")
+	}
+
+	if got := FirmwareVersion(); got != "" {
+		t.Fatalf("expected no version after a declined pairing, got %q", got)
+	}
+	if SupportsETH(1) || SupportsERC20("0xToken") {
+		t.Fatal("expected no version-derived capabilities after a declined pairing")
+	}
+}
+
+// A second init that fails must not leave the first one's success answering.
+// Android re-inits on the bound device without reopening, so nothing else
+// would clear it.
+func TestFailedReinitClearsThePreviousSuccess(t *testing.T) {
+	fake := &fakeBitboxDevice{
+		channelHashOk: true,
+		status:        firmware.StatusInitialized,
+		version:       semver.NewSemVer(9, 26, 4),
+		supportsETH:   true,
+	}
+	withFakeBitbox(t, fake)
+
+	if !InitDevice() {
+		t.Fatal("expected the first init to succeed")
+	}
+	if got := FirmwareVersion(); got != "v9.26.4" {
+		t.Fatalf("expected the version after a good init, got %q", got)
+	}
+
+	fake.initErr = errors.New("transport dropped")
+	if InitDevice() {
+		t.Fatal("expected the second init to fail")
+	}
+
+	if got := FirmwareVersion(); got != "" {
+		t.Fatalf("expected no version after a failed re-init, got %q", got)
+	}
+	if SupportsETH(1) {
+		t.Fatal("expected no ETH support after a failed re-init")
+	}
+}
+
+// An init still in flight when the device is replaced must not mark the new
+// one — its result describes a device that is no longer connected.
+func TestInitCannotMarkADeviceThatWasReplaced(t *testing.T) {
+	restore := snapshotDevice()
+	t.Cleanup(restore)
+
+	previous := &fakeBitboxDevice{channelHashOk: true}
+	replacement := &fakeBitboxDevice{channelHashOk: true}
+
+	setDevice(replacement, false)
+	setInitialised(previous, true)
+
+	if _, _, initialised := currentDevice(); initialised {
+		t.Fatal("expected a replaced device's init result to be discarded")
 	}
 }
 
@@ -457,6 +538,9 @@ func TestDeviceStateIsSafeUnderConcurrentReplacement(t *testing.T) {
 			defer wg.Done()
 			for j := 0; j < 200; j++ {
 				setDevice(fake, false)
+				// Mark it, or the readers below can only ever see the
+				// uninitialised answer and the assertion goes vacuous.
+				setInitialised(fake, true)
 				ReleaseDevice()
 			}
 		}()

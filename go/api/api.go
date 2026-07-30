@@ -202,14 +202,21 @@ func InitDevice() (success bool) {
 		fmt.Println("[InitDevice] device pointer is nil")
 		return false
 	}
+	// Init discards the existing channel before it builds a new one, so an
+	// earlier success stops counting the moment this attempt starts.
+	setInitialised(device, false)
+
 	err := device.Init()
 	if err != nil {
 		fmt.Println("[InitDevice] error:", err)
 		return false
 	}
-	// Only now is the device's own version trustworthy. A failed init leaves it
-	// unmarked, so a declined pairing cannot answer a version gate.
-	markInitialised(device)
+	// Init returns nil even when the user declined on the device — it reports
+	// that by leaving the channel hash unverified, having already dropped both
+	// ciphers. Only a channel the device actually confirmed may answer a
+	// version gate, so the pairing flag decides this, not the error.
+	_, deviceVerified := device.ChannelHash()
+	setInitialised(device, deviceVerified)
 	return true
 }
 
@@ -238,10 +245,11 @@ func DeviceStatus() (status string) {
 // costs no device round-trip.
 //
 // An empty string means the version is not known — no device, a device whose
-// init has not succeeded (including a declined pairing), or one whose reported
-// version could not be parsed. It never means "old firmware": callers gating
-// on a minimum version must treat the two apart. This is the main firmware
-// version, NOT the separately versioned Bluetooth firmware.
+// pairing was not established (a decline included, which InitDevice itself
+// still reports as success), or one whose reported version could not be
+// parsed. It never means "old firmware": callers gating on a minimum version
+// must treat the two apart. This is the main firmware version, NOT the
+// separately versioned Bluetooth firmware.
 //
 //export FirmwareVersion
 func FirmwareVersion() (version string) {
