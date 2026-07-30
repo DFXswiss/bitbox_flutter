@@ -13,13 +13,15 @@ import (
 func BTCXPub(coinType int, keypath string, addressType int, display bool) (xpub string) {
 	defer recoverPanic("BTCXPub")
 
+	device, _ := currentDevice()
+
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
 		fmt.Printf("[BTCXPub] keypath decode error: %v\n", err)
 		return ""
 	}
 
-	pub, err := bitbox.BTCXPub(messages.BTCCoin(coinType), keypathData, messages.BTCPubRequest_XPubType(addressType), display)
+	pub, err := device.BTCXPub(messages.BTCCoin(coinType), keypathData, messages.BTCPubRequest_XPubType(addressType), display)
 	if err != nil {
 		fmt.Printf("[BTCXPub] device error: %v\n", err)
 		return ""
@@ -31,13 +33,15 @@ func BTCXPub(coinType int, keypath string, addressType int, display bool) (xpub 
 func BTCSignPSBT(coinType int, psbtStr string) (signed string) {
 	defer recoverPanic("BTCSignPSBT")
 
+	device, _ := currentDevice()
+
 	psbt_, err := psbt.NewFromRawBytes(strings.NewReader(psbtStr), true)
 	if err != nil {
 		fmt.Printf("[BTCSignPSBT] PSBT parse error: %v\n", err)
 		return ""
 	}
 
-	if err := bitbox.BTCSignPSBT(messages.BTCCoin(coinType), psbt_, nil); err != nil {
+	if err := device.BTCSignPSBT(messages.BTCCoin(coinType), psbt_, nil); err != nil {
 		fmt.Printf("[BTCSignPSBT] device error: %v\n", err)
 		return ""
 	}
@@ -55,6 +59,8 @@ func BTCSignPSBT(coinType int, psbtStr string) (signed string) {
 func BTCSignMessage(coinType int, keypath string, msg []byte) (signature []byte) {
 	defer recoverPanic("BTCSignMessage")
 
+	device, _ := currentDevice()
+
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
 		fmt.Printf("[BTCSignMessage] keypath decode error: %v\n", err)
@@ -66,7 +72,7 @@ func BTCSignMessage(coinType int, keypath string, msg []byte) (signature []byte)
 		Keypath:      keypathData,
 	}
 
-	result, err := bitbox.BTCSignMessage(messages.BTCCoin(coinType), scriptConfig, msg)
+	result, err := device.BTCSignMessage(messages.BTCCoin(coinType), scriptConfig, msg)
 	if err != nil {
 		fmt.Printf("[BTCSignMessage] device error: %v\n", err)
 		return nil
@@ -78,7 +84,9 @@ func BTCSignMessage(coinType int, keypath string, msg []byte) (signature []byte)
 func GetMasterFingerprint() (fingerprint []byte) {
 	defer recoverPanic("GetMasterFingerprint")
 
-	fingerprint, err := bitbox.RootFingerprint()
+	device, _ := currentDevice()
+
+	fingerprint, err := device.RootFingerprint()
 	if err != nil {
 		return make([]byte, 0)
 	}

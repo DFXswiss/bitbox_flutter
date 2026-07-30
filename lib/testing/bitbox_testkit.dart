@@ -247,6 +247,10 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
 
   @override
   Future<bool> open(BitboxDevice usbDevice) async {
+    // Opening starts a new device, whether or not the previous one was closed
+    // first. Anything learned about the previous one is stale from here on.
+    _isInitialised = false;
+
     final result = await _run(
       SimulatedBitboxMethod.open,
       <String, Object?>{'device': usbDevice},
@@ -259,6 +263,10 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
 
   @override
   Future<bool> initBitBox() async {
+    // Cleared up front so a rejected or failed init cannot leave the previous
+    // device's state readable.
+    _isInitialised = false;
+
     final result = await _run(
       SimulatedBitboxMethod.initBitBox,
       const <String, Object?>{},

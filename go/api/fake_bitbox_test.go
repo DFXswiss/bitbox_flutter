@@ -161,12 +161,16 @@ func (f *fakeBitboxDevice) BTCSignMessage(messages.BTCCoin, *messages.BTCScriptC
 	return &firmware.BTCSignMessageResult{Signature: f.btcSignMessageSig}, f.btcSignMessageErr
 }
 
+// withFakeBitbox installs a fake for the duration of the test. It restores the
+// synthetic-version flag along with the device, since the two are one piece of
+// state: leaving the flag set would silently empty FirmwareVersion for every
+// later test in the package.
 func withFakeBitbox(t *testing.T, fake *fakeBitboxDevice) {
 	t.Helper()
-	previous := bitbox
-	bitbox = fake
+	previousDevice, previousSynthetic := currentDevice()
+	setDevice(fake, false)
 	t.Cleanup(func() {
-		bitbox = previous
+		setDevice(previousDevice, previousSynthetic)
 	})
 }
 
@@ -316,21 +320,78 @@ func TestReleaseDeviceClearsTheDeviceSoStaleStateIsNotReported(t *testing.T) {
 	}
 }
 
+// nullTransport satisfies GoReadWriteCloserInterface without a device.
+// GetDeviceWithInfo only stores it — u2fhid.NewCommunication and
+// firmware.NewDevice do no I/O — so the version-parsing branch is reachable in
+// a unit test.
+type nullTransport struct{}
+
+func (nullTransport) Read(n int) ([]byte, error) { return nil, errors.New("no transport") }
+func (nullTransport) Write(p []byte) (int, error) {
+	return 0, errors.New("no transport")
+}
+func (nullTransport) Close() error { return nil }
+
 // A version the device reported but GetDeviceWithInfo could not parse is
 // replaced by an invented placeholder. That placeholder must never leave the
-// binding as the device's own version.
-func TestFirmwareVersionHidesTheSyntheticFallbackVersion(t *testing.T) {
-	fake := &fakeBitboxDevice{version: semver.NewSemVer(9, 25, 0)}
-	withFakeBitbox(t, fake)
-
-	previous := versionIsSynthetic
-	versionIsSynthetic = true
+// binding — neither as the device's own version, nor through the capability
+// answers the SDK derives from the version.
+func TestGetDeviceWithInfoWithholdsAnUnparseableVersion(t *testing.T) {
+	previousDevice, previousSynthetic := currentDevice()
 	t.Cleanup(func() {
-		versionIsSynthetic = previous
+		setDevice(previousDevice, previousSynthetic)
 	})
 
+	GetDeviceWithInfo(nullTransport{}, "v9.26.4", "bb02p-multi")
+	if got := FirmwareVersion(); got != "v9.26.4" {
+		t.Fatalf("expected the reported version, got %q", got)
+	}
+	if !SupportsETH(1) {
+		t.Fatal("expected ETH support for a device on v9.26.4")
+	}
+
+	GetDeviceWithInfo(nullTransport{}, "not-a-version", "bb02p-multi")
 	if got := FirmwareVersion(); got != "" {
-		t.Fatalf("expected the synthetic version to be withheld, got %q", got)
+		t.Fatalf("expected the invented version to be withheld, got %q", got)
+	}
+	if SupportsETH(1) {
+		t.Fatal("expected no ETH support while the version is unknown")
+	}
+	if SupportsERC20("0xdAC17F958D2ee523a2206206994597C13D831ec7") {
+		t.Fatal("expected no ERC20 support while the version is unknown")
+	}
+
+	// A later good connection must clear the flag again, not inherit it.
+	GetDeviceWithInfo(nullTransport{}, "v9.26.4", "bb02p-multi")
+	if got := FirmwareVersion(); got != "v9.26.4" {
+		t.Fatalf("expected the flag to be cleared on reconnect, got %q", got)
+	}
+
+	ReleaseDevice()
+	if got := FirmwareVersion(); got != "" {
+		t.Fatalf("expected no version after release, got %q", got)
+	}
+}
+
+// Attaching a USB device after a Bluetooth device whose version did not parse
+// must not inherit the flag. The two exports cannot tell the states apart --
+// both answer "" before Init -- so assert the flag itself, which is what the
+// version the SDK infers during Init is later filtered through.
+func TestGetDeviceClearsTheSyntheticVersionFlag(t *testing.T) {
+	previousDevice, previousSynthetic := currentDevice()
+	t.Cleanup(func() {
+		setDevice(previousDevice, previousSynthetic)
+	})
+
+	GetDeviceWithInfo(nullTransport{}, "not-a-version", "bb02p-multi")
+	if _, synthetic := currentDevice(); !synthetic {
+		t.Fatal("expected the unparseable version to be flagged as synthetic")
+	}
+
+	GetDevice(nullTransport{})
+
+	if _, synthetic := currentDevice(); synthetic {
+		t.Fatal("expected a USB device to start with no synthetic version flag")
 	}
 }
 
@@ -369,10 +430,10 @@ func TestFakeBitboxHarnessSimulatesErrorsAndPanicsWithoutCrashing(t *testing.T) 
 }
 
 func TestExportedAPIsReturnZeroValuesWithoutDeviceInsteadOfCrashing(t *testing.T) {
-	previous := bitbox
-	bitbox = nil
+	previousDevice, previousSynthetic := currentDevice()
+	setDevice(nil, false)
 	t.Cleanup(func() {
-		bitbox = previous
+		setDevice(previousDevice, previousSynthetic)
 	})
 
 	keypath := "0000002c0000003c000000000000000000000000"

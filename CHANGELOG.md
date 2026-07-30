@@ -8,10 +8,14 @@
   not be parsed — and never "old firmware", so a host gating on a minimum
   version must treat the two apart and refuse rather than pass when it is
   absent.
-* `close()` now also releases the device inside the native binding. Previously
-  the binding kept the previous device, so `getDeviceStatus()` (and the new
-  `getFirmwareVersion()`) could answer for a device that was no longer attached
-  after a reconnect.
+* Disconnecting now also releases the device inside the native binding, on an
+  explicit `close()` and on a peripheral that drops on its own. Previously the
+  binding kept the previous device, so `getDeviceStatus()` (and the new
+  `getFirmwareVersion()`) could answer for a device that was no longer attached.
+* When a Bluetooth device reports a version string that cannot be parsed, the
+  binding no longer answers `supportsETH()` / `supportsERC20()` from the
+  placeholder version it substitutes internally. Both report no support while
+  the version is unknown, matching `getFirmwareVersion()` returning null.
 
 ## 0.0.10
 

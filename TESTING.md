@@ -96,13 +96,20 @@ The tests explicitly guard against these hardware-wallet regressions:
   panic path, and the testkit withholds the version until `initBitBox` has run,
   so a consumer's version gate cannot pass its tests and then read null on
   hardware.
-- A released device still answering. `close()` calls `ReleaseDevice`, so the
-  binding cannot report the previous device's status or firmware version after
-  a reconnect. Covered on the Go side and in the testkit.
+- A released device still answering. `handleDisconnect` calls `ReleaseDevice`,
+  so a peripheral that drops on its own clears the binding just like an explicit
+  `close()` does — `open()` never rebinds, so anything less would keep the old
+  device readable. Pinned from CI by a source assertion on `Bluetooth.swift`,
+  the same way the 60s read timeout is, plus Go and testkit coverage.
 - The placeholder version `GetDeviceWithInfo` substitutes when the device's own
   version string does not parse escaping as if it were the device's. It is
-  withheld from `FirmwareVersion`, so unparseable reads as unknown rather than
-  as a specific wrong number a gate would act on.
+  withheld from `FirmwareVersion` *and* from `SupportsETH` / `SupportsERC20`,
+  which the SDK derives from the version — so unparseable reads as unknown
+  everywhere rather than as a specific wrong number a gate would act on.
+- `bitbox` and its synthetic-version flag being written without synchronisation.
+  They are replaced as a pair under `deviceMu`, and every export takes a single
+  snapshot, because close/disconnect runs on a different thread than an
+  in-flight signature or pairing handshake. `go test -race` covers the package.
 - ETH/BTC success, error, and panic flows not being simulatable without hardware
 - App-level Flutter flows not being testable with deterministic BitBox delays
   and aborts

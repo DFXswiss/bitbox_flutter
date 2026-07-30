@@ -2,6 +2,7 @@ package api
 
 import (
 	"math/big"
+	"sync"
 
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware/messages"
@@ -69,9 +70,32 @@ type bitboxDevice interface {
 	) (*firmware.BTCSignMessageResult, error)
 }
 
-var bitbox bitboxDevice
+// deviceMu guards bitbox and versionIsSynthetic, which belong together: they
+// describe one connected device and are replaced as a pair. The bridges write
+// them from the thread that handles close/disconnect while a signature or the
+// pairing handshake is still in flight on another, so an unsynchronised
+// interface write could be observed half-applied — a fault the recoverPanic
+// boundary could not catch.
+var (
+	deviceMu           sync.RWMutex
+	bitbox             bitboxDevice
+	versionIsSynthetic bool
+)
 
-// versionIsSynthetic reports that the version held by bitbox was invented by
-// GetDeviceWithInfo because the device's own string did not parse, so it must
-// not be handed out as the device's firmware version.
-var versionIsSynthetic bool
+// currentDevice returns the connected device and whether its version was
+// invented rather than reported, read together under one lock.
+func currentDevice() (device bitboxDevice, versionSynthetic bool) {
+	deviceMu.RLock()
+	defer deviceMu.RUnlock()
+
+	return bitbox, versionIsSynthetic
+}
+
+// setDevice replaces the connected device. Pass nil to release it.
+func setDevice(device bitboxDevice, versionSynthetic bool) {
+	deviceMu.Lock()
+	defer deviceMu.Unlock()
+
+	bitbox = device
+	versionIsSynthetic = versionSynthetic
+}

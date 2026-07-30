@@ -374,6 +374,13 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     }
 
     func handleDisconnect() {
+        // Release the Go-side device on EVERY disconnect, not just an explicit
+        // close: the peripheral can drop on its own and Bluetooth can be turned
+        // off, and open() does not rebind. Otherwise the binding keeps
+        // answering getFirmwareVersion/getDeviceStatus for a device that is no
+        // longer there.
+        ApiReleaseDevice()
+
         connectedPeripheral = nil
         pReader = nil
         pWriter = nil

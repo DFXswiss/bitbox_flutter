@@ -299,6 +299,38 @@ void main() {
     expect(await manager.getFirmwareVersion(), isNull);
   });
 
+  test('does not carry a firmware version into a reopen without disconnect',
+      () async {
+    // Reconnecting without closing first is the same hazard: hardware rebinds
+    // an uninitialised device, so the simulator must forget too.
+    installSimulatedBitboxPlatform(firmwareVersion: 'v9.26.4');
+    final manager = BitboxManager();
+    await manager.connect((await manager.devices).single);
+    await manager.initBitBox();
+    expect(await manager.getFirmwareVersion(), 'v9.26.4');
+
+    await manager.connect((await manager.devices).single);
+
+    expect(await manager.getFirmwareVersion(), isNull);
+  });
+
+  test('forgets the firmware version when initBitBox fails', () async {
+    final platform = installSimulatedBitboxPlatform(
+      firmwareVersion: 'v9.26.4',
+    );
+    final manager = BitboxManager();
+    await manager.connect((await manager.devices).single);
+    await manager.initBitBox();
+
+    platform.throwOn(
+      SimulatedBitboxMethod.initBitBox,
+      StateError('pairing rejected'),
+    );
+
+    await expectLater(manager.initBitBox(), throwsA(isA<StateError>()));
+    expect(await manager.getFirmwareVersion(), isNull);
+  });
+
   test('requires an open channel to read the firmware version', () async {
     installSimulatedBitboxPlatform(firmwareVersion: 'v9.26.4');
     final manager = BitboxManager();

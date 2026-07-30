@@ -23,3 +23,24 @@ func TestIOSBluetoothKeeps60sReadTimeout(t *testing.T) {
 		t.Fatal("Bluetooth.swift must not regress to the old 10s BLE read timeout")
 	}
 }
+
+// Every disconnect must release the Go-side device, not just an explicit
+// close(): the peripheral can drop on its own and open() does not rebind, so
+// the binding would otherwise keep reporting the previous device's firmware
+// version and status to a host that is gating on them.
+func TestIOSBluetoothReleasesTheDeviceOnDisconnect(t *testing.T) {
+	contentBytes, err := os.ReadFile("../../ios/Classes/Bluetooth.swift")
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := string(contentBytes)
+
+	_, after, found := strings.Cut(content, "func handleDisconnect() {")
+	if !found {
+		t.Fatal("Bluetooth.swift must keep handleDisconnect as the single teardown path")
+	}
+	body, _, _ := strings.Cut(after, "\n    }")
+	if !strings.Contains(body, "ApiReleaseDevice()") {
+		t.Fatal("handleDisconnect must call ApiReleaseDevice() so a dropped peripheral cannot keep answering")
+	}
+}

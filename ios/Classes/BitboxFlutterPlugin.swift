@@ -124,10 +124,9 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     private func close(result: @escaping FlutterResult) {
+        // handleDisconnect releases the Go-side device, so the next peripheral
+        // is not answered with this one's cached status and firmware version.
         bluetoothManager.handleDisconnect()
-        // Drop the Go-side device too, so the next peripheral is not answered
-        // with this one's cached status and firmware version.
-        ApiReleaseDevice()
         result(true)
     }
 

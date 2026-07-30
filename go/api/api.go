@@ -106,10 +106,9 @@ func GetDevice(device GoReadWriteCloserInterface) {
 
 	const bitboxCMD = 0x80 + 0x40 + 0x01
 	comm := u2fhid.NewCommunication(readWriteCloser{device}, bitboxCMD)
-	bitbox = firmware.NewDevice(nil, nil, &mocks.Config{}, comm, &mocks.Logger{})
 	// The SDK infers the real version from OP_INFO during Init, so nothing is
 	// synthesised on this path.
-	versionIsSynthetic = false
+	setDevice(firmware.NewDevice(nil, nil, &mocks.Config{}, comm, &mocks.Logger{}), false)
 }
 
 // ReleaseDevice drops the reference to the connected device. The bridges call
@@ -121,8 +120,7 @@ func GetDevice(device GoReadWriteCloserInterface) {
 func ReleaseDevice() {
 	defer recoverPanic("ReleaseDevice")
 
-	bitbox = nil
-	versionIsSynthetic = false
+	setDevice(nil, false)
 }
 
 // GetDeviceWithInfo is like GetDevice but accepts version and product info for Bluetooth connections.
@@ -139,7 +137,7 @@ func GetDeviceWithInfo(device GoReadWriteCloserInterface, versionStr string, pro
 	// default rather than panicking, so a malformed version from the device
 	// does not crash the host engine.
 	version, err := semver.NewSemVerFromString(strings.TrimPrefix(versionStr, "v"))
-	versionIsSynthetic = err != nil
+	versionSynthetic := err != nil
 	if err != nil {
 		fmt.Printf("[GetDeviceWithInfo] invalid version %q, falling back: %v\n", versionStr, err)
 		version = semver.NewSemVer(9, 25, 0)
@@ -166,17 +164,21 @@ func GetDeviceWithInfo(device GoReadWriteCloserInterface, versionStr string, pro
 		product = common.ProductBitBox02PlusMulti
 	}
 
-	bitbox = firmware.NewDevice(version, &product, &mocks.Config{}, comm, &mocks.Logger{})
+	setDevice(
+		firmware.NewDevice(version, &product, &mocks.Config{}, comm, &mocks.Logger{}),
+		versionSynthetic,
+	)
 }
 
 //export GetChannelHash
 func GetChannelHash() (hash string) {
 	defer recoverPanic("GetChannelHash")
 
-	if bitbox == nil {
+	device, _ := currentDevice()
+	if device == nil {
 		return ""
 	}
-	hash, _ = bitbox.ChannelHash()
+	hash, _ = device.ChannelHash()
 	return hash
 }
 
@@ -184,21 +186,23 @@ func GetChannelHash() (hash string) {
 func ChannelHashVerify(ok bool) {
 	defer recoverPanic("ChannelHashVerify")
 
-	if bitbox == nil {
+	device, _ := currentDevice()
+	if device == nil {
 		return
 	}
-	bitbox.ChannelHashVerify(ok)
+	device.ChannelHashVerify(ok)
 }
 
 //export InitDevice
 func InitDevice() (success bool) {
 	defer recoverPanic("InitDevice")
 
-	if bitbox == nil {
+	device, _ := currentDevice()
+	if device == nil {
 		fmt.Println("[InitDevice] device pointer is nil")
 		return false
 	}
-	err := bitbox.Init()
+	err := device.Init()
 	if err != nil {
 		fmt.Println("[InitDevice] error:", err)
 		return false
@@ -217,10 +221,11 @@ func InitDevice() (success bool) {
 func DeviceStatus() (status string) {
 	defer recoverPanic("DeviceStatus")
 
-	if bitbox == nil {
+	device, _ := currentDevice()
+	if device == nil {
 		return ""
 	}
-	return string(bitbox.Status())
+	return string(device.Status())
 }
 
 // FirmwareVersion returns the main firmware version of the connected device,
@@ -239,10 +244,11 @@ func DeviceStatus() (status string) {
 func FirmwareVersion() (version string) {
 	defer recoverPanic("FirmwareVersion")
 
-	if bitbox == nil {
+	device, versionSynthetic := currentDevice()
+	if device == nil {
 		return ""
 	}
-	if versionIsSynthetic {
+	if versionSynthetic {
 		// GetDeviceWithInfo substituted a placeholder it invented, which would
 		// otherwise be reported as the device's own version and could clear a
 		// device a gate never actually identified.
@@ -251,57 +257,66 @@ func FirmwareVersion() (version string) {
 	// Version() panics when the version is not known yet, which is the normal
 	// state for USB before InitDevice. recoverPanic turns that into the ""
 	// zero value, so the not-known case stays indistinguishable from no device.
-	return "v" + bitbox.Version().String()
+	return "v" + device.Version().String()
 }
 
 //export SupportsETH
 func SupportsETH(chainId int) (supported bool) {
 	defer recoverPanic("SupportsETH")
 
-	if bitbox == nil {
+	device, versionSynthetic := currentDevice()
+	if device == nil || versionSynthetic {
+		// The SDK answers this by comparing the firmware version, so a version
+		// we invented would decide it. Report no support rather than a
+		// capability derived from a number the device never sent.
 		return false
 	}
-	return bitbox.SupportsETH(uint64(chainId))
+	return device.SupportsETH(uint64(chainId))
 }
 
 //export SupportsLTC
 func SupportsLTC() (supported bool) {
 	defer recoverPanic("SupportsLTC")
 
-	if bitbox == nil {
+	device, _ := currentDevice()
+	if device == nil {
 		return false
 	}
-	return bitbox.SupportsLTC()
+	return device.SupportsLTC()
 }
 
 //export SupportsBluetooth
 func SupportsBluetooth() (supported bool) {
 	defer recoverPanic("SupportsBluetooth")
 
-	if bitbox == nil {
+	device, _ := currentDevice()
+	if device == nil {
 		return false
 	}
-	return bitbox.SupportsBluetooth()
+	return device.SupportsBluetooth()
 }
 
 //export SupportsERC20
 func SupportsERC20(contractAddress string) (supported bool) {
 	defer recoverPanic("SupportsERC20")
 
-	if bitbox == nil {
+	device, versionSynthetic := currentDevice()
+	if device == nil || versionSynthetic {
+		// Version-derived like SupportsETH — see there.
 		return false
 	}
-	return bitbox.SupportsERC20(contractAddress)
+	return device.SupportsERC20(contractAddress)
 }
 
 //export DeviceInfo
 func DeviceInfo() (out firmware.DeviceInfo) {
 	defer recoverPanic("DeviceInfo")
 
-	if bitbox == nil {
+	device, _ := currentDevice()
+	if device == nil {
 		return firmware.DeviceInfo{}
 	}
-	info, err := bitbox.DeviceInfo()
+	info, err := device.DeviceInfo()
 	if err != nil || info == nil {
 		fmt.Printf("[DeviceInfo] error: %v\n", err)
 		return firmware.DeviceInfo{}
