@@ -14,7 +14,7 @@ CI runs three jobs on every PR and every push to `develop` / `main` (`.github/wo
 
 | Job | What it does |
 |---|---|
-| `Flutter analyze + test` | `dart format --set-exit-if-changed`, `flutter analyze --no-fatal-infos`, `flutter test` |
+| `Flutter analyze + test` | `dart format --set-exit-if-changed`, `flutter analyze --fatal-infos`, `flutter test` |
 | `Go unit tests` | `go vet ./...`, `go test -race -timeout 60s -count=1 ./...` against `go/api` and `go/u2fhid` |
 | `Workflow YAML lint` | `yaml.safe_load` on every `.github/**/*.y*ml` |
 

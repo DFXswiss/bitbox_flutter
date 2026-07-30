@@ -306,6 +306,23 @@ void main() {
     expect(await manager.getFirmwareVersion(), isNull);
   });
 
+  test('forgets the firmware version after close', () async {
+    // requireOpen: false so the close path itself is what withdraws the
+    // version, rather than the open-channel guard answering first.
+    installSimulatedBitboxPlatform(
+      requireOpen: false,
+      firmwareVersion: 'v9.26.4',
+    );
+    final manager = BitboxManager();
+    await manager.connect((await manager.devices).single);
+    await manager.initBitBox();
+    expect(await manager.getFirmwareVersion(), 'v9.26.4');
+
+    await manager.disconnect();
+
+    expect(await manager.getFirmwareVersion(), isNull);
+  });
+
   test('does not carry a firmware version into a reopen without disconnect',
       () async {
     // Reconnecting without closing first is the same hazard: hardware rebinds

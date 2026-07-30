@@ -318,9 +318,9 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
 
   // On hardware the version is read from the device initBitBox bound, and only
   // once that device has confirmed the pairing, so it stays absent until then
-  // and goes absent again after close. The simulator models that rather than the looser
-  // open-only gate, so a consumer's version gate cannot pass here and read null
-  // in the field.
+  // and goes absent again after close. The simulator models that rather than
+  // the looser open-only gate, so a consumer's version gate cannot pass here
+  // and read null in the field.
   @override
   Future<String?> getFirmwareVersion() async {
     final version = await _run<String?>(
