@@ -99,9 +99,10 @@ The tests explicitly guard against these hardware-wallet regressions:
 - A version answering for a pairing that never completed. Bluetooth knows the
   version before `initBitBox`, so the binding tracks whether the pairing was
   actually established and withholds the version — and the capabilities derived
-  from it — until then. The signal is the channel hash being device-verified,
-  NOT `Init()` returning without error: the SDK returns nil on a decline, having
-  already dropped both ciphers. Covered on the Go side for a decline, a failed
+  from it — until then. The signal is the channel hash being device-verified and
+  not since repudiated by the host, NOT `Init()` returning without error: the
+  SDK returns nil on a decline, having already dropped both ciphers. Covered on
+  the Go side for a decline, a host-rejected code and its re-affirm, a failed
   init, a failed re-init, and an init that lands after the device was replaced.
 - A device that is gone still answering. On iOS both `handleDisconnect` and
   `connect(to:)` call `ReleaseDevice`, since nothing rebinds the Go side until

@@ -14,7 +14,8 @@ class GetFirmwareVersionOperation(manager: BitboxManager) : UsbMethodCallOperati
     ) {
         // Api.firmwareVersion() reads the version the SDK already holds — no
         // device round-trip — so it is safe on the serial queue like
-        // getDeviceStatus. Over USB it stays empty until initBitBox has run.
+        // getDeviceStatus. It stays empty until the pairing is established —
+        // initBitBox returning true is not enough.
         val version = Api.firmwareVersion()
         result.success(version)
     }

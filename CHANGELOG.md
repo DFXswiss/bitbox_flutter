@@ -16,20 +16,23 @@
   could answer for a device that was no longer attached.
 * `supportsETH()` / `supportsERC20()` are derived from the firmware version, so
   they now report no support whenever that version is unknown: before the
-  pairing is established, after one the device declined or the host rejected,
-  and when the device reported a version string the binding could not parse
-  (where it previously answered from an internal placeholder). Both track
-  `getFirmwareVersion()` returning null.
+  pairing is established, after one the device declined, and when the device
+  reported a version string the binding could not parse (where it previously
+  answered from an internal placeholder). Both track `getFirmwareVersion()`
+  returning null.
 * Over Bluetooth the version is known before pairing, but `getFirmwareVersion()`
-  withholds it until the pairing is established — a declined, rejected or failed
-  pairing must not vouch for a channel that was never established. Note the SDK
+  withholds it until the pairing is established — a declined or failed pairing
+  must not vouch for a channel that was never established. (The native binding
+  also withholds it when the host rejects the code; `BitboxManager` never does,
+  since `channelHashVerify()` always affirms.) Note the SDK
   reports a decline by leaving the channel hash unverified rather than by
   returning an error, so `initBitBox()` still resolves true there; only the
   version and the capabilities derived from it are withheld.
-* Testkit: `SimulatedBitboxPlatform.supportsLTC()` now reports false until
-  `initBitBox()` has run, matching `supportsETH()` / `supportsERC20()`. A
-  consumer test that asserted it straight after `connect()` needs an
-  `initBitBox()` first.
+* Testkit: `SimulatedBitboxPlatform.supportsLTC()` now reports false until the
+  simulated pairing is established — `initBitBox()` returning true is not
+  enough, see the new `pairingVerified` knob — matching `supportsETH()` /
+  `supportsERC20()`. A consumer test that asserted it straight after
+  `connect()` needs an `initBitBox()` first.
 
 ## 0.0.10
 

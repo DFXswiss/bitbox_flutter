@@ -203,8 +203,8 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
     private func getFirmwareVersion(result: @escaping FlutterResult) {
         // ApiFirmwareVersion() reads the version the SDK already holds — no
         // device round-trip — so it returns immediately without a background
-        // dispatch. Empty until initBitBox has bound the device; the Dart side
-        // maps that to null.
+        // dispatch. Empty until the pairing is established — initBitBox returning
+        // true is not enough; the Dart side maps that to null.
         result(ApiFirmwareVersion())
     }
 

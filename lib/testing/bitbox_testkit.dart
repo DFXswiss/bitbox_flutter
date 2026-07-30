@@ -318,7 +318,7 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
 
   // On hardware the version is read from the device initBitBox bound, and only
   // once that device has confirmed the pairing, so it stays absent until then
-  // and returns after close. The simulator models that rather than the looser
+  // and goes absent again after close. The simulator models that rather than the looser
   // open-only gate, so a consumer's version gate cannot pass here and read null
   // in the field.
   @override
@@ -366,10 +366,12 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
   bool get _hasKnownVersion => _isInitialised && firmwareVersion != null;
 
   // Product-derived rather than version-derived, so the plugin can still answer
-  // it after a failed pairing. The simulator is deliberately stricter and waits
-  // for a successful initBitBox: before that the plugin answers false anyway
-  // (on USB the product is not known yet, on Bluetooth nothing is bound), and a
-  // consumer is better served by a gate that opens once, on success.
+  // it once the device is bound — including after a pairing the device
+  // declined. The simulator is deliberately stricter and waits for an
+  // established pairing: before the device is bound the plugin answers false
+  // anyway (on USB the product is not known yet, on Bluetooth nothing is
+  // bound), and a consumer is better served by one gate that opens when the
+  // pairing does.
   @override
   Future<bool> supportsLTC() async {
     final supported = await _run(

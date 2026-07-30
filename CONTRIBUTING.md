@@ -15,7 +15,7 @@ CI runs three jobs on every PR and every push to `develop` / `main` (`.github/wo
 | Job | What it does |
 |---|---|
 | `Flutter analyze + test` | `dart format --set-exit-if-changed`, `flutter analyze --no-fatal-infos`, `flutter test` |
-| `Go unit tests` | `go vet ./...`, `go test -race -timeout 60s ./...` against `go/api` and `go/u2fhid` |
+| `Go unit tests` | `go vet ./...`, `go test -race -timeout 60s -count=1 ./...` against `go/api` and `go/u2fhid` |
 | `Workflow YAML lint` | `yaml.safe_load` on every `.github/**/*.y*ml` |
 
 Run the same gate locally — see [TESTING.md → Fast PR gate](TESTING.md#fast-pr-gate). Lint failures upstream are wasted CI minutes; catch them locally.

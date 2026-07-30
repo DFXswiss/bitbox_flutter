@@ -487,6 +487,45 @@ func TestHostRejectingThePairingClearsTheVersion(t *testing.T) {
 	if SupportsETH(1) {
 		t.Fatal("expected no ETH support after the host rejected the code")
 	}
+
+	// Re-affirming leaves the SDK's channel usable, so the version comes back
+	// without forcing a full re-init.
+	ChannelHashVerify(true)
+
+	if got := FirmwareVersion(); got != "v9.26.4" {
+		t.Fatalf("expected the version back after the host re-affirmed, got %q", got)
+	}
+	if !SupportsETH(1) {
+		t.Fatal("expected ETH support back after the host re-affirmed")
+	}
+}
+
+// Both bridges hard-code channelHashVerify(true), and a device decline still
+// resolves initBitBox to true — so an app that shows the pairing code and then
+// confirms reaches this exact sequence whenever the user declines on the
+// device. Affirming must not resurrect a channel the device refused.
+func TestHostAffirmingCannotResurrectADeclinedPairing(t *testing.T) {
+	fake := &fakeBitboxDevice{
+		channelHash:    "PAIR-CODE",
+		channelHashOk:  false, // declined on the device
+		version:        semver.NewSemVer(9, 26, 4),
+		supportsETH:    true,
+		supportedERC20: map[string]bool{"0xToken": true},
+	}
+	withFakeBitbox(t, fake)
+
+	if !InitDevice() {
+		t.Fatal("expected the simulated init call itself to succeed")
+	}
+
+	ChannelHashVerify(true)
+
+	if got := FirmwareVersion(); got != "" {
+		t.Fatalf("expected no version after affirming a declined pairing, got %q", got)
+	}
+	if SupportsETH(1) || SupportsERC20("0xToken") {
+		t.Fatal("expected no capabilities after affirming a declined pairing")
+	}
 }
 
 // A second init that fails must not leave the first one's success answering.
