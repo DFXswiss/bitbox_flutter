@@ -121,6 +121,12 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         guard var metadata = state.discoveredPeripherals[peripheralID] else { return }
         centralManager.stopScan()
 
+        // Connecting starts a new device even if the previous one was never
+        // closed, and nothing rebinds the Go side until initBitBox. Without
+        // this, the peripheral we are leaving keeps answering for the one we
+        // are joining. Android gets this for free: open() calls GetDevice.
+        ApiReleaseDevice()
+
         // Reset characteristics for fresh connection
         pWriter = nil
         pReader = nil

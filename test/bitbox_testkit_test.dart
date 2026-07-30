@@ -59,6 +59,9 @@ void main() {
     );
     final manager = BitboxManager();
     await manager.connect((await manager.devices).single);
+    // ETH/ERC20 support is version-derived, and the version is only known once
+    // the device is initialised — as on hardware.
+    await manager.initBitBox();
 
     expect(await manager.supportsETH(1), isTrue);
     expect(await manager.supportsERC20('0xToken'), isTrue);
@@ -329,6 +332,21 @@ void main() {
 
     await expectLater(manager.initBitBox(), throwsA(isA<StateError>()));
     expect(await manager.getFirmwareVersion(), isNull);
+  });
+
+  test('reports no ETH support while the version is unknown', () async {
+    // The plugin answers these from the firmware version, so an unknown
+    // version must not clear a capability gate. LTC is product-derived and
+    // stays available.
+    installSimulatedBitboxPlatform(firmwareVersion: null);
+    final manager = BitboxManager();
+    await manager.connect((await manager.devices).single);
+    await manager.initBitBox();
+
+    expect(await manager.getFirmwareVersion(), isNull);
+    expect(await manager.supportsETH(1), isFalse);
+    expect(await manager.supportsERC20('0xToken'), isFalse);
+    expect(await manager.supportsLTC(), isTrue);
   });
 
   test('requires an open channel to read the firmware version', () async {

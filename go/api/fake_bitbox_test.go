@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"reflect"
 	"slices"
+	"sync"
 	"testing"
 
 	"github.com/BitBoxSwiss/bitbox02-api-go/api/firmware"
@@ -371,6 +372,57 @@ func TestGetDeviceWithInfoWithholdsAnUnparseableVersion(t *testing.T) {
 	if got := FirmwareVersion(); got != "" {
 		t.Fatalf("expected no version after release, got %q", got)
 	}
+}
+
+// concurrentFake answers without recording the call, so the harness's own call
+// log cannot race and confuse the subject of the test below, which is deviceMu.
+type concurrentFake struct {
+	*fakeBitboxDevice
+	version *semver.SemVer
+}
+
+func (c concurrentFake) Version() *semver.SemVer { return c.version }
+func (c concurrentFake) Status() firmware.Status { return firmware.StatusInitialized }
+
+// The bridges release the device from the thread handling close/disconnect
+// while a signature or the pairing handshake is still running on another, so
+// the device and its flag must be replaced as a pair under the lock. Without
+// deviceMu this fails under -race; the assertions matter less than the
+// concurrent access itself.
+func TestDeviceStateIsSafeUnderConcurrentReplacement(t *testing.T) {
+	previousDevice, previousSynthetic := currentDevice()
+	t.Cleanup(func() {
+		setDevice(previousDevice, previousSynthetic)
+	})
+
+	fake := concurrentFake{
+		fakeBitboxDevice: &fakeBitboxDevice{},
+		version:          semver.NewSemVer(9, 26, 4),
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 200; j++ {
+				setDevice(fake, false)
+				ReleaseDevice()
+			}
+		}()
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 200; j++ {
+				// Either answer is legitimate; the point is that no reader can
+				// observe a half-replaced device.
+				if got := FirmwareVersion(); got != "" && got != "v9.26.4" {
+					t.Errorf("observed a torn firmware version: %q", got)
+				}
+				DeviceStatus()
+			}
+		}()
+	}
+	wg.Wait()
 }
 
 // Attaching a USB device after a Bluetooth device whose version did not parse

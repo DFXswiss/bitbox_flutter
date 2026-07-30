@@ -96,20 +96,26 @@ The tests explicitly guard against these hardware-wallet regressions:
   panic path, and the testkit withholds the version until `initBitBox` has run,
   so a consumer's version gate cannot pass its tests and then read null on
   hardware.
-- A released device still answering. `handleDisconnect` calls `ReleaseDevice`,
-  so a peripheral that drops on its own clears the binding just like an explicit
-  `close()` does — `open()` never rebinds, so anything less would keep the old
-  device readable. Pinned from CI by a source assertion on `Bluetooth.swift`,
-  the same way the 60s read timeout is, plus Go and testkit coverage.
+- A device that is gone still answering. On iOS both `handleDisconnect` and
+  `connect(to:)` call `ReleaseDevice`, since nothing rebinds the Go side until
+  `initBitBox` — so a peripheral that drops on its own, and one that is replaced
+  without closing first, both clear the binding. Pinned from CI by source
+  assertions on `Bluetooth.swift` and `BitboxFlutterPlugin.swift`, the same way
+  the 60s read timeout is, plus Go and testkit coverage. Those assertions ignore
+  commented-out calls and fail loudly if they can no longer find the function,
+  rather than degrading into a file-wide search.
 - The placeholder version `GetDeviceWithInfo` substitutes when the device's own
   version string does not parse escaping as if it were the device's. It is
   withheld from `FirmwareVersion` *and* from `SupportsETH` / `SupportsERC20`,
   which the SDK derives from the version — so unparseable reads as unknown
-  everywhere rather than as a specific wrong number a gate would act on.
+  everywhere rather than as a specific wrong number a gate would act on. The
+  testkit models the same rule, so a consumer's capability gate cannot pass
+  against the simulator and read false on hardware.
 - `bitbox` and its synthetic-version flag being written without synchronisation.
   They are replaced as a pair under `deviceMu`, and every export takes a single
   snapshot, because close/disconnect runs on a different thread than an
-  in-flight signature or pairing handshake. `go test -race` covers the package.
+  in-flight signature or pairing handshake. A dedicated test drives readers and
+  writers concurrently, so `go test -race` fails if the lock is removed.
 - ETH/BTC success, error, and panic flows not being simulatable without hardware
 - App-level Flutter flows not being testable with deterministic BitBox delays
   and aborts

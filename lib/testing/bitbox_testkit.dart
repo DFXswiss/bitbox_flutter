@@ -324,18 +324,33 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
   }
 
   @override
-  Future<bool> supportsETH(int chainId) => _run(
-        SimulatedBitboxMethod.supportsETH,
-        <String, Object?>{'chainId': chainId},
-        supportsETHResult,
-      );
+  // The SDK answers these two by comparing the firmware version, so the plugin
+  // reports no support whenever the version is unknown. Mirror that here, or a
+  // consumer's capability gate passes against the simulator and reads false on
+  // hardware. supportsLTC/supportsBluetooth are product-derived and unaffected.
+  @override
+  Future<bool> supportsETH(int chainId) async {
+    final supported = await _run(
+      SimulatedBitboxMethod.supportsETH,
+      <String, Object?>{'chainId': chainId},
+      supportsETHResult,
+    );
+
+    return _hasKnownVersion && supported;
+  }
 
   @override
-  Future<bool> supportsERC20(String contractAddress) => _run(
-        SimulatedBitboxMethod.supportsERC20,
-        <String, Object?>{'contractAddress': contractAddress},
-        supportsERC20Result,
-      );
+  Future<bool> supportsERC20(String contractAddress) async {
+    final supported = await _run(
+      SimulatedBitboxMethod.supportsERC20,
+      <String, Object?>{'contractAddress': contractAddress},
+      supportsERC20Result,
+    );
+
+    return _hasKnownVersion && supported;
+  }
+
+  bool get _hasKnownVersion => _isInitialised && firmwareVersion != null;
 
   @override
   Future<bool> supportsLTC() => _run(
