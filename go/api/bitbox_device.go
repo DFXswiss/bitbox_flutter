@@ -70,3 +70,8 @@ type bitboxDevice interface {
 }
 
 var bitbox bitboxDevice
+
+// versionIsSynthetic reports that the version held by bitbox was invented by
+// GetDeviceWithInfo because the device's own string did not parse, so it must
+// not be handed out as the device's firmware version.
+var versionIsSynthetic bool

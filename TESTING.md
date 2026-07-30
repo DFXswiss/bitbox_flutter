@@ -90,12 +90,19 @@ The tests explicitly guard against these hardware-wallet regressions:
 - U2FHID assumptions drifting away from the iOS BLE bridge contract
 - Pairing/channel-hash behavior not being simulatable without hardware
 - An unknown firmware version being conflated with an old one. The SDK panics
-  when `Version()` is read before the device reports one — normal for USB until
-  `initBitBox` runs the `OP_INFO` exchange — so `FirmwareVersion` relies on
-  `recoverPanic` to return `""`, which the Dart side maps to null. The Go test
-  drives that panic path, and the testkit refuses the call on a closed channel,
+  when `Version()` is read before the device reports one — normal until
+  `initBitBox` binds the device — so `FirmwareVersion` relies on `recoverPanic`
+  to return `""`, which the Dart side maps to null. The Go test drives that
+  panic path, and the testkit withholds the version until `initBitBox` has run,
   so a consumer's version gate cannot pass its tests and then read null on
   hardware.
+- A released device still answering. `close()` calls `ReleaseDevice`, so the
+  binding cannot report the previous device's status or firmware version after
+  a reconnect. Covered on the Go side and in the testkit.
+- The placeholder version `GetDeviceWithInfo` substitutes when the device's own
+  version string does not parse escaping as if it were the device's. It is
+  withheld from `FirmwareVersion`, so unparseable reads as unknown rather than
+  as a specific wrong number a gate would act on.
 - ETH/BTC success, error, and panic flows not being simulatable without hardware
 - App-level Flutter flows not being testable with deterministic BitBox delays
   and aborts

@@ -125,6 +125,9 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
 
     private func close(result: @escaping FlutterResult) {
         bluetoothManager.handleDisconnect()
+        // Drop the Go-side device too, so the next peripheral is not answered
+        // with this one's cached status and firmware version.
+        ApiReleaseDevice()
         result(true)
     }
 
@@ -201,8 +204,8 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
     private func getFirmwareVersion(result: @escaping FlutterResult) {
         // ApiFirmwareVersion() reads the version the SDK already holds — no
         // device round-trip — so it returns immediately without a background
-        // dispatch. Empty until the device is opened; the Dart side maps that
-        // to null.
+        // dispatch. Empty until initBitBox has bound the device; the Dart side
+        // maps that to null.
         result(ApiFirmwareVersion())
     }
 

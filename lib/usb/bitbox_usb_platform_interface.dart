@@ -47,16 +47,16 @@ abstract class BitboxUsbPlatform extends PlatformInterface {
 
   /// The main firmware version of the connected device, e.g. `"v9.26.4"`.
   ///
-  /// Available once the device is open: over Bluetooth the version comes from
-  /// the product characteristic the peripheral publishes while pairing, over
-  /// USB it is inferred during [initBitBox]. Reading it needs no device
-  /// round-trip on either transport.
+  /// Available once [initBitBox] has succeeded — on BOTH transports, not just
+  /// USB. [open] alone is not enough: it establishes the link, while
+  /// [initBitBox] is what binds the device the version is read from. Reading it
+  /// afterwards needs no device round-trip.
   ///
-  /// Null means the version is not known yet — no device, or a USB device that
-  /// has not been through [initBitBox]. It never means "old firmware": callers
-  /// gating on a minimum version must treat the two apart, and retry rather
-  /// than latch, or they will penalise devices that simply have not reported
-  /// yet.
+  /// Null means the version is not known — before [initBitBox], after [close],
+  /// or when the device reported a version that could not be parsed, whether
+  /// because it is malformed or in an unexpected format. It never
+  /// means "old firmware": callers gating on a minimum version must treat the
+  /// two apart, and refuse rather than pass when the version is absent.
   ///
   /// This is the main firmware version, NOT the separately versioned Bluetooth
   /// firmware.

@@ -107,6 +107,22 @@ func GetDevice(device GoReadWriteCloserInterface) {
 	const bitboxCMD = 0x80 + 0x40 + 0x01
 	comm := u2fhid.NewCommunication(readWriteCloser{device}, bitboxCMD)
 	bitbox = firmware.NewDevice(nil, nil, &mocks.Config{}, comm, &mocks.Logger{})
+	// The SDK infers the real version from OP_INFO during Init, so nothing is
+	// synthesised on this path.
+	versionIsSynthetic = false
+}
+
+// ReleaseDevice drops the reference to the connected device. The bridges call
+// it when closing so the next connection cannot be answered with the previous
+// device's cached state — a stale firmware version would otherwise let a host
+// clear a device it never inspected.
+//
+//export ReleaseDevice
+func ReleaseDevice() {
+	defer recoverPanic("ReleaseDevice")
+
+	bitbox = nil
+	versionIsSynthetic = false
 }
 
 // GetDeviceWithInfo is like GetDevice but accepts version and product info for Bluetooth connections.
@@ -123,6 +139,7 @@ func GetDeviceWithInfo(device GoReadWriteCloserInterface, versionStr string, pro
 	// default rather than panicking, so a malformed version from the device
 	// does not crash the host engine.
 	version, err := semver.NewSemVerFromString(strings.TrimPrefix(versionStr, "v"))
+	versionIsSynthetic = err != nil
 	if err != nil {
 		fmt.Printf("[GetDeviceWithInfo] invalid version %q, falling back: %v\n", versionStr, err)
 		version = semver.NewSemVer(9, 25, 0)
@@ -207,21 +224,28 @@ func DeviceStatus() (status string) {
 }
 
 // FirmwareVersion returns the main firmware version of the connected device,
-// `v`-prefixed (e.g. "v9.26.4"). Over Bluetooth the version is handed to the
-// SDK at connect time from the product characteristic; over USB the SDK infers
-// it from OP_INFO while initialising, so it only becomes available once
-// InitDevice has run.
+// `v`-prefixed (e.g. "v9.26.4"). It becomes available once InitDevice has run:
+// over Bluetooth the version reaches the SDK with GetDeviceWithInfo, over USB
+// the SDK infers it from OP_INFO while initialising. Reading it afterwards
+// costs no device round-trip.
 //
-// An empty string means the version is not known — no device, or a USB device
-// that has not been initialised yet. It never means "old firmware": callers
-// gating on a minimum version must treat the two apart. This is the main
-// firmware version, NOT the separately versioned Bluetooth firmware.
+// An empty string means the version is not known — no device, a device that
+// has not been initialised yet, or a device whose reported version could not
+// be parsed. It never means "old firmware": callers gating on a minimum
+// version must treat the two apart. This is the main firmware version, NOT the
+// separately versioned Bluetooth firmware.
 //
 //export FirmwareVersion
 func FirmwareVersion() (version string) {
 	defer recoverPanic("FirmwareVersion")
 
 	if bitbox == nil {
+		return ""
+	}
+	if versionIsSynthetic {
+		// GetDeviceWithInfo substituted a placeholder it invented, which would
+		// otherwise be reported as the device's own version and could clear a
+		// device a gate never actually identified.
 		return ""
 	}
 	// Version() panics when the version is not known yet, which is the normal

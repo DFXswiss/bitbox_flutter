@@ -69,15 +69,16 @@ FOUNDATION_EXPORT NSData* _Nullable ApiETHSignTypedMessage(long chainId, NSStrin
 
 /**
  * FirmwareVersion returns the main firmware version of the connected device,
-`v`-prefixed (e.g. "v9.26.4"). Over Bluetooth the version is handed to the
-SDK at connect time from the product characteristic; over USB the SDK infers
-it from OP_INFO while initialising, so it only becomes available once
-InitDevice has run.
+`v`-prefixed (e.g. "v9.26.4"). It becomes available once InitDevice has run:
+over Bluetooth the version reaches the SDK with GetDeviceWithInfo, over USB
+the SDK infers it from OP_INFO while initialising. Reading it afterwards
+costs no device round-trip.
 
-An empty string means the version is not known — no device, or a USB device
-that has not been initialised yet. It never means "old firmware": callers
-gating on a minimum version must treat the two apart. This is the main
-firmware version, NOT the separately versioned Bluetooth firmware.
+An empty string means the version is not known — no device, a device that
+has not been initialised yet, or a device whose reported version could not
+be parsed. It never means "old firmware": callers gating on a minimum
+version must treat the two apart. This is the main firmware version, NOT the
+separately versioned Bluetooth firmware.
  */
 FOUNDATION_EXPORT NSString* _Nonnull ApiFirmwareVersion(void);
 
@@ -94,6 +95,14 @@ FOUNDATION_EXPORT void ApiGetDeviceWithInfo(id<ApiGoReadWriteCloserInterface> _N
 FOUNDATION_EXPORT NSData* _Nullable ApiGetMasterFingerprint(void);
 
 FOUNDATION_EXPORT BOOL ApiInitDevice(void);
+
+/**
+ * ReleaseDevice drops the reference to the connected device. The bridges call
+it when closing so the next connection cannot be answered with the previous
+device's cached state — a stale firmware version would otherwise let a host
+clear a device it never inspected.
+ */
+FOUNDATION_EXPORT void ApiReleaseDevice(void);
 
 FOUNDATION_EXPORT BOOL ApiSupportsBluetooth(void);
 

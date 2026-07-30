@@ -247,12 +247,13 @@ void main() {
     expect(platform.count(SimulatedBitboxMethod.getDeviceStatus), 1);
   });
 
-  test('reports the firmware version', () async {
+  test('reports the firmware version once initBitBox has run', () async {
     final platform = installSimulatedBitboxPlatform(
       firmwareVersion: 'v9.26.4',
     );
     final manager = BitboxManager();
     await manager.connect((await manager.devices).single);
+    await manager.initBitBox();
 
     expect(await manager.getFirmwareVersion(), 'v9.26.4');
     expect(platform.count(SimulatedBitboxMethod.getFirmwareVersion), 1);
@@ -260,20 +261,45 @@ void main() {
 
   test('reports a null firmware version when the device has not told yet',
       () async {
-    // A USB device reports nothing until initBitBox has run. Null must be
+    // The device is initialised but reported no version. Null must be
     // distinguishable from an old version by the caller, never conflated.
     installSimulatedBitboxPlatform(firmwareVersion: null);
+    final manager = BitboxManager();
+    await manager.connect((await manager.devices).single);
+    await manager.initBitBox();
+
+    expect(await manager.getFirmwareVersion(), isNull);
+  });
+
+  test('reports no firmware version before initBitBox has run', () async {
+    // open() only establishes the link; initBitBox is what binds the device
+    // the version is read from. The simulator must not be more permissive than
+    // hardware, or a consumer's gate passes its tests and reads null in the
+    // field.
+    installSimulatedBitboxPlatform(firmwareVersion: 'v9.26.4');
     final manager = BitboxManager();
     await manager.connect((await manager.devices).single);
 
     expect(await manager.getFirmwareVersion(), isNull);
   });
 
+  test('does not carry a firmware version across a reconnect', () async {
+    // The dangerous case: close, attach a different device, and read the
+    // version without initialising it. The previous device's version must not
+    // answer, or a gate clears a device it never inspected.
+    installSimulatedBitboxPlatform(firmwareVersion: 'v9.26.4');
+    final manager = BitboxManager();
+    await manager.connect((await manager.devices).single);
+    await manager.initBitBox();
+    expect(await manager.getFirmwareVersion(), 'v9.26.4');
+
+    await manager.disconnect();
+    await manager.connect((await manager.devices).single);
+
+    expect(await manager.getFirmwareVersion(), isNull);
+  });
+
   test('requires an open channel to read the firmware version', () async {
-    // The version comes off the device the plugin has open, so a gate cannot
-    // consult it before connecting. The simulator must not be more permissive
-    // than hardware, or a consumer's gate passes its tests and reads null in
-    // the field.
     installSimulatedBitboxPlatform(firmwareVersion: 'v9.26.4');
     final manager = BitboxManager();
 

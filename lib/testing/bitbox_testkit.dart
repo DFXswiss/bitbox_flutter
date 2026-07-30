@@ -186,9 +186,14 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
   final List<BitboxDevice> _devices;
 
   bool _isOpen = false;
+  bool _isInitialised = false;
   bool _channelHashVerified;
 
   bool get isOpen => _isOpen;
+
+  /// Whether [initBitBox] has succeeded on the currently open device. The
+  /// firmware version is only readable from that point on, as on hardware.
+  bool get isInitialised => _isInitialised;
 
   bool get channelHashVerified => _channelHashVerified;
 
@@ -253,11 +258,15 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
   }
 
   @override
-  Future<bool> initBitBox() => _run(
-        SimulatedBitboxMethod.initBitBox,
-        const <String, Object?>{},
-        initResult,
-      );
+  Future<bool> initBitBox() async {
+    final result = await _run(
+      SimulatedBitboxMethod.initBitBox,
+      const <String, Object?>{},
+      initResult,
+    );
+    _isInitialised = result;
+    return result;
+  }
 
   @override
   Future<Uint8List> getMasterFingerprint() => _run(
@@ -291,12 +300,20 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
         deviceStatus,
       );
 
+  // On hardware the version is read from the device initBitBox bound, so it
+  // stays absent until then and returns after close. The simulator models that
+  // rather than the looser open-only gate, so a consumer's version gate cannot
+  // pass here and read null in the field.
   @override
-  Future<String?> getFirmwareVersion() => _run<String?>(
-        SimulatedBitboxMethod.getFirmwareVersion,
-        const <String, Object?>{},
-        firmwareVersion,
-      );
+  Future<String?> getFirmwareVersion() async {
+    final version = await _run<String?>(
+      SimulatedBitboxMethod.getFirmwareVersion,
+      const <String, Object?>{},
+      firmwareVersion,
+    );
+
+    return _isInitialised ? version : null;
+  }
 
   @override
   Future<bool> supportsETH(int chainId) => _run(
@@ -494,7 +511,10 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
       true,
       needsOpen: false,
     );
-    if (result) _isOpen = false;
+    if (result) {
+      _isOpen = false;
+      _isInitialised = false;
+    }
     return result;
   }
 

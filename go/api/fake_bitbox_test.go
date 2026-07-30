@@ -292,6 +292,48 @@ func TestFirmwareVersionReturnsEmptyBeforeTheDeviceReportsOne(t *testing.T) {
 	}
 }
 
+// Closing must drop the device, or the next connection inherits this one's
+// cached state. A stale firmware version is the dangerous case: a host gate
+// would clear a device it never inspected.
+func TestReleaseDeviceClearsTheDeviceSoStaleStateIsNotReported(t *testing.T) {
+	fake := &fakeBitboxDevice{
+		status:  firmware.StatusInitialized,
+		version: semver.NewSemVer(9, 26, 4),
+	}
+	withFakeBitbox(t, fake)
+
+	if got := FirmwareVersion(); got != "v9.26.4" {
+		t.Fatalf("expected the connected device's version, got %q", got)
+	}
+
+	ReleaseDevice()
+
+	if got := FirmwareVersion(); got != "" {
+		t.Fatalf("expected no version after release, got %q", got)
+	}
+	if got := DeviceStatus(); got != "" {
+		t.Fatalf("expected no status after release, got %q", got)
+	}
+}
+
+// A version the device reported but GetDeviceWithInfo could not parse is
+// replaced by an invented placeholder. That placeholder must never leave the
+// binding as the device's own version.
+func TestFirmwareVersionHidesTheSyntheticFallbackVersion(t *testing.T) {
+	fake := &fakeBitboxDevice{version: semver.NewSemVer(9, 25, 0)}
+	withFakeBitbox(t, fake)
+
+	previous := versionIsSynthetic
+	versionIsSynthetic = true
+	t.Cleanup(func() {
+		versionIsSynthetic = previous
+	})
+
+	if got := FirmwareVersion(); got != "" {
+		t.Fatalf("expected the synthetic version to be withheld, got %q", got)
+	}
+}
+
 func TestFakeBitboxHarnessSimulatesErrorsAndPanicsWithoutCrashing(t *testing.T) {
 	fake := &fakeBitboxDevice{
 		initErr:                   errors.New("init failed"),
