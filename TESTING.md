@@ -96,6 +96,10 @@ The tests explicitly guard against these hardware-wallet regressions:
   panic path, and the testkit withholds the version until `initBitBox` has run,
   so a consumer's version gate cannot pass its tests and then read null on
   hardware.
+- A version answering for a pairing that never completed. Bluetooth knows the
+  version before `initBitBox`, so the binding tracks whether init actually
+  succeeded and withholds the version — and the capabilities derived from it —
+  until then. Covered for a declined pairing on the Go side and in the testkit.
 - A device that is gone still answering. On iOS both `handleDisconnect` and
   `connect(to:)` call `ReleaseDevice`, since nothing rebinds the Go side until
   `initBitBox` — so a peripheral that drops on its own, and one that is replaced
@@ -109,8 +113,9 @@ The tests explicitly guard against these hardware-wallet regressions:
   withheld from `FirmwareVersion` *and* from `SupportsETH` / `SupportsERC20`,
   which the SDK derives from the version — so unparseable reads as unknown
   everywhere rather than as a specific wrong number a gate would act on. The
-  testkit models the same rule, so a consumer's capability gate cannot pass
-  against the simulator and read false on hardware.
+  testkit applies the same rule to its configured version, so a consumer's
+  capability gate does not pass against the simulator and read false on
+  hardware. A behaviour installed with `when` moves only the method it targets.
 - `bitbox` and its synthetic-version flag being written without synchronisation.
   They are replaced as a pair under `deviceMu`, and every export takes a single
   snapshot, because close/disconnect runs on a different thread than an

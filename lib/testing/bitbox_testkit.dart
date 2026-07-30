@@ -323,11 +323,10 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
     return _isInitialised ? version : null;
   }
 
-  @override
   // The SDK answers these two by comparing the firmware version, so the plugin
   // reports no support whenever the version is unknown. Mirror that here, or a
   // consumer's capability gate passes against the simulator and reads false on
-  // hardware. supportsLTC/supportsBluetooth are product-derived and unaffected.
+  // hardware.
   @override
   Future<bool> supportsETH(int chainId) async {
     final supported = await _run(
@@ -350,14 +349,26 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
     return _hasKnownVersion && supported;
   }
 
+  /// Reads the configured [firmwareVersion], not the result of
+  /// [getFirmwareVersion]: consulting that would log a second call and run any
+  /// behaviour installed with [when] twice. A [when] override therefore moves
+  /// [getFirmwareVersion] alone — override [supportsETHResult] alongside it to
+  /// move the capabilities.
   bool get _hasKnownVersion => _isInitialised && firmwareVersion != null;
 
+  // The product is as unknown as the version until initBitBox has bound the
+  // device, and the SDK reads it to answer this — so hardware says false
+  // before then, whatever the device turns out to support.
   @override
-  Future<bool> supportsLTC() => _run(
-        SimulatedBitboxMethod.supportsLTC,
-        const <String, Object?>{},
-        supportsLTCResult,
-      );
+  Future<bool> supportsLTC() async {
+    final supported = await _run(
+      SimulatedBitboxMethod.supportsLTC,
+      const <String, Object?>{},
+      supportsLTCResult,
+    );
+
+    return _isInitialised && supported;
+  }
 
   @override
   Future<String> getBTCXPub(

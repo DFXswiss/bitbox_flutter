@@ -13,10 +13,14 @@
   to another device without closing first. Previously the binding kept the
   previous device, so `getDeviceStatus()` (and the new `getFirmwareVersion()`)
   could answer for a device that was no longer attached.
-* When a Bluetooth device reports a version string that cannot be parsed, the
-  binding no longer answers `supportsETH()` / `supportsERC20()` from the
-  placeholder version it substitutes internally. Both report no support while
-  the version is unknown, matching `getFirmwareVersion()` returning null.
+* `supportsETH()` / `supportsERC20()` are derived from the firmware version, so
+  they now report no support whenever that version is unknown: before
+  `initBitBox()` succeeds, and when the device reported a version string the
+  binding could not parse (where it previously answered from an internal
+  placeholder). Both track `getFirmwareVersion()` returning null.
+* Over Bluetooth the version is known before pairing, but `getFirmwareVersion()`
+  withholds it until `initBitBox()` succeeds — a declined or failed pairing must
+  not vouch for a channel that was never established.
 
 ## 0.0.10
 

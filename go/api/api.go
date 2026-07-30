@@ -174,7 +174,7 @@ func GetDeviceWithInfo(device GoReadWriteCloserInterface, versionStr string, pro
 func GetChannelHash() (hash string) {
 	defer recoverPanic("GetChannelHash")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 	if device == nil {
 		return ""
 	}
@@ -186,7 +186,7 @@ func GetChannelHash() (hash string) {
 func ChannelHashVerify(ok bool) {
 	defer recoverPanic("ChannelHashVerify")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 	if device == nil {
 		return
 	}
@@ -197,7 +197,7 @@ func ChannelHashVerify(ok bool) {
 func InitDevice() (success bool) {
 	defer recoverPanic("InitDevice")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 	if device == nil {
 		fmt.Println("[InitDevice] device pointer is nil")
 		return false
@@ -207,6 +207,9 @@ func InitDevice() (success bool) {
 		fmt.Println("[InitDevice] error:", err)
 		return false
 	}
+	// Only now is the device's own version trustworthy. A failed init leaves it
+	// unmarked, so a declined pairing cannot answer a version gate.
+	markInitialised(device)
 	return true
 }
 
@@ -221,7 +224,7 @@ func InitDevice() (success bool) {
 func DeviceStatus() (status string) {
 	defer recoverPanic("DeviceStatus")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 	if device == nil {
 		return ""
 	}
@@ -234,18 +237,21 @@ func DeviceStatus() (status string) {
 // the SDK infers it from OP_INFO while initialising. Reading it afterwards
 // costs no device round-trip.
 //
-// An empty string means the version is not known — no device, a device that
-// has not been initialised yet, or a device whose reported version could not
-// be parsed. It never means "old firmware": callers gating on a minimum
-// version must treat the two apart. This is the main firmware version, NOT the
-// separately versioned Bluetooth firmware.
+// An empty string means the version is not known — no device, a device whose
+// init has not succeeded (including a declined pairing), or one whose reported
+// version could not be parsed. It never means "old firmware": callers gating
+// on a minimum version must treat the two apart. This is the main firmware
+// version, NOT the separately versioned Bluetooth firmware.
 //
 //export FirmwareVersion
 func FirmwareVersion() (version string) {
 	defer recoverPanic("FirmwareVersion")
 
-	device, versionSynthetic := currentDevice()
-	if device == nil {
+	device, versionSynthetic, initialised := currentDevice()
+	if device == nil || !initialised {
+		// Bluetooth knows a version before init, but a pairing that was
+		// declined or failed must not answer a gate — the channel it would
+		// vouch for was never established.
 		return ""
 	}
 	if versionSynthetic {
@@ -264,11 +270,12 @@ func FirmwareVersion() (version string) {
 func SupportsETH(chainId int) (supported bool) {
 	defer recoverPanic("SupportsETH")
 
-	device, versionSynthetic := currentDevice()
-	if device == nil || versionSynthetic {
+	device, versionSynthetic, initialised := currentDevice()
+	if device == nil || !initialised || versionSynthetic {
 		// The SDK answers this by comparing the firmware version, so a version
-		// we invented would decide it. Report no support rather than a
-		// capability derived from a number the device never sent.
+		// we invented — or one from a device whose init never succeeded —
+		// would decide it. Report no support rather than a capability derived
+		// from a number the device never stood behind.
 		return false
 	}
 	return device.SupportsETH(uint64(chainId))
@@ -278,7 +285,7 @@ func SupportsETH(chainId int) (supported bool) {
 func SupportsLTC() (supported bool) {
 	defer recoverPanic("SupportsLTC")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 	if device == nil {
 		return false
 	}
@@ -289,7 +296,7 @@ func SupportsLTC() (supported bool) {
 func SupportsBluetooth() (supported bool) {
 	defer recoverPanic("SupportsBluetooth")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 	if device == nil {
 		return false
 	}
@@ -300,8 +307,8 @@ func SupportsBluetooth() (supported bool) {
 func SupportsERC20(contractAddress string) (supported bool) {
 	defer recoverPanic("SupportsERC20")
 
-	device, versionSynthetic := currentDevice()
-	if device == nil || versionSynthetic {
+	device, versionSynthetic, initialised := currentDevice()
+	if device == nil || !initialised || versionSynthetic {
 		// Version-derived like SupportsETH — see there.
 		return false
 	}
@@ -312,7 +319,7 @@ func SupportsERC20(contractAddress string) (supported bool) {
 func DeviceInfo() (out firmware.DeviceInfo) {
 	defer recoverPanic("DeviceInfo")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 	if device == nil {
 		return firmware.DeviceInfo{}
 	}

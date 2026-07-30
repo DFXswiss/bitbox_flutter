@@ -15,7 +15,7 @@ import (
 func ETHGetAddress(chainId int, keypath string, outputType int, display bool, contractAddress []byte) (address string) {
 	defer recoverPanic("ETHGetAddress")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
@@ -62,7 +62,7 @@ type legacyTxPayload struct {
 func ETHSignRPLTx(chainId int, keypath string, encodedTx string, isEIP1559 bool) (signature []byte) {
 	defer recoverPanic("ETHSignRPLTx")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
@@ -126,7 +126,7 @@ func ETHSignRPLTx(chainId int, keypath string, encodedTx string, isEIP1559 bool)
 func ETHSignTransaction(chainId int, keypath string, nonce int, gasPrice string, gasLimit int, recipient []byte, value string, data []byte, recipientAddressCase int) (signature []byte) {
 	defer recoverPanic("ETHSignTransaction")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
@@ -152,7 +152,7 @@ func ETHSignTransaction(chainId int, keypath string, nonce int, gasPrice string,
 func ETHSignEIP1559(chainId int, keypath string, nonce int, maxPriorityFeePerGas string, maxFeePerGas string, gasLimit int, recipient []byte, value string, data []byte, recipientAddressCase int) (signature []byte) {
 	defer recoverPanic("ETHSignEIP1559")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
@@ -182,7 +182,7 @@ func ETHSignEIP1559(chainId int, keypath string, nonce int, maxPriorityFeePerGas
 func ETHSignMessage(chainId int, keypath string, msg []byte) (signature []byte) {
 	defer recoverPanic("ETHSignMessage")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
@@ -202,7 +202,7 @@ func ETHSignMessage(chainId int, keypath string, msg []byte) (signature []byte) 
 func ETHSignTypedMessage(chainId int, keypath string, jsonMsg []byte) (signature []byte) {
 	defer recoverPanic("ETHSignTypedMessage")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {

@@ -80,22 +80,39 @@ var (
 	deviceMu           sync.RWMutex
 	bitbox             bitboxDevice
 	versionIsSynthetic bool
+	deviceInitialised  bool
 )
 
-// currentDevice returns the connected device and whether its version was
-// invented rather than reported, read together under one lock.
-func currentDevice() (device bitboxDevice, versionSynthetic bool) {
+// currentDevice returns the connected device together with whether its version
+// was invented rather than reported, and whether InitDevice has succeeded on
+// it. Read under one lock, so no caller can see a half-replaced device.
+func currentDevice() (device bitboxDevice, versionSynthetic bool, initialised bool) {
 	deviceMu.RLock()
 	defer deviceMu.RUnlock()
 
-	return bitbox, versionIsSynthetic
+	return bitbox, versionIsSynthetic, deviceInitialised
 }
 
-// setDevice replaces the connected device. Pass nil to release it.
+// setDevice replaces the connected device. Pass nil to release it. The device
+// always starts uninitialised: a version is only trustworthy once InitDevice
+// has run, on Bluetooth as much as on USB.
 func setDevice(device bitboxDevice, versionSynthetic bool) {
 	deviceMu.Lock()
 	defer deviceMu.Unlock()
 
 	bitbox = device
 	versionIsSynthetic = versionSynthetic
+	deviceInitialised = false
+}
+
+// markInitialised records that InitDevice succeeded, but only while device is
+// still the connected one — a disconnect during the pairing wait must not be
+// undone by the init that was already in flight.
+func markInitialised(device bitboxDevice) {
+	deviceMu.Lock()
+	defer deviceMu.Unlock()
+
+	if bitbox == device {
+		deviceInitialised = true
+	}
 }

@@ -13,7 +13,7 @@ import (
 func BTCXPub(coinType int, keypath string, addressType int, display bool) (xpub string) {
 	defer recoverPanic("BTCXPub")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
@@ -33,7 +33,7 @@ func BTCXPub(coinType int, keypath string, addressType int, display bool) (xpub 
 func BTCSignPSBT(coinType int, psbtStr string) (signed string) {
 	defer recoverPanic("BTCSignPSBT")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 
 	psbt_, err := psbt.NewFromRawBytes(strings.NewReader(psbtStr), true)
 	if err != nil {
@@ -59,7 +59,7 @@ func BTCSignPSBT(coinType int, psbtStr string) (signed string) {
 func BTCSignMessage(coinType int, keypath string, msg []byte) (signature []byte) {
 	defer recoverPanic("BTCSignMessage")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 
 	keypathData, err := hexToUint32Slice(keypath)
 	if err != nil {
@@ -84,7 +84,7 @@ func BTCSignMessage(coinType int, keypath string, msg []byte) (signature []byte)
 func GetMasterFingerprint() (fingerprint []byte) {
 	defer recoverPanic("GetMasterFingerprint")
 
-	device, _ := currentDevice()
+	device, _, _ := currentDevice()
 
 	fingerprint, err := device.RootFingerprint()
 	if err != nil {

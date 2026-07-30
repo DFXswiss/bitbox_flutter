@@ -74,11 +74,11 @@ over Bluetooth the version reaches the SDK with GetDeviceWithInfo, over USB
 the SDK infers it from OP_INFO while initialising. Reading it afterwards
 costs no device round-trip.
 
-An empty string means the version is not known — no device, a device that
-has not been initialised yet, or a device whose reported version could not
-be parsed. It never means "old firmware": callers gating on a minimum
-version must treat the two apart. This is the main firmware version, NOT the
-separately versioned Bluetooth firmware.
+An empty string means the version is not known — no device, a device whose
+init has not succeeded (including a declined pairing), or one whose reported
+version could not be parsed. It never means "old firmware": callers gating
+on a minimum version must treat the two apart. This is the main firmware
+version, NOT the separately versioned Bluetooth firmware.
  */
 FOUNDATION_EXPORT NSString* _Nonnull ApiFirmwareVersion(void);
 

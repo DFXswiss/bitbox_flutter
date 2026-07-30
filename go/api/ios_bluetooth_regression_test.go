@@ -84,15 +84,14 @@ func swiftFunctionBody(t *testing.T, path, signature string) (string, error) {
 	return body, nil
 }
 
-// containsCall reports whether the body actually calls target, ignoring
-// commented-out lines — commenting the call out is the likeliest regression.
+// containsCall reports whether the body actually calls target. Line comments
+// are stripped first, so neither commenting the call out nor merely mentioning
+// it in a trailing comment satisfies the guard — both are likelier than the
+// call simply vanishing.
 func containsCall(body, target string) bool {
 	for _, line := range strings.Split(body, "\n") {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "//") {
-			continue
-		}
-		if strings.Contains(line, target) {
+		code, _, _ := strings.Cut(line, "//")
+		if strings.Contains(code, target) {
 			return true
 		}
 	}

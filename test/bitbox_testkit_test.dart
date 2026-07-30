@@ -186,6 +186,10 @@ void main() {
     );
     final manager = BitboxManager();
     await manager.connect((await manager.devices).single);
+    // Capabilities are only meaningful on an initialised device, so initialise
+    // first — otherwise these assertions would pass on the lifecycle gate and
+    // never exercise the configured results.
+    await manager.initBitBox();
 
     expect(await manager.channelHashVerify(), isFalse);
     expect(platform.channelHashVerified, isFalse);
@@ -346,6 +350,24 @@ void main() {
     expect(await manager.getFirmwareVersion(), isNull);
     expect(await manager.supportsETH(1), isFalse);
     expect(await manager.supportsERC20('0xToken'), isFalse);
+    // LTC is product-derived, so an unknown version does not withdraw it.
+    expect(await manager.supportsLTC(), isTrue);
+  });
+
+  test('reports no capabilities before initBitBox has run', () async {
+    // open() alone tells the plugin nothing about the device, so every
+    // capability answer is false until init binds it — as on hardware.
+    installSimulatedBitboxPlatform();
+    final manager = BitboxManager();
+    await manager.connect((await manager.devices).single);
+
+    expect(await manager.supportsETH(1), isFalse);
+    expect(await manager.supportsERC20('0xToken'), isFalse);
+    expect(await manager.supportsLTC(), isFalse);
+
+    await manager.initBitBox();
+
+    expect(await manager.supportsETH(1), isTrue);
     expect(await manager.supportsLTC(), isTrue);
   });
 
