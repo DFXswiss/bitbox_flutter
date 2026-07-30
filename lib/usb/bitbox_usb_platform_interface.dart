@@ -45,6 +45,18 @@ abstract class BitboxUsbPlatform extends PlatformInterface {
 
   Future<String> getDeviceStatus();
 
+  /// The main firmware version of the connected device, e.g. `"v9.26.4"`.
+  ///
+  /// Only the Bluetooth transport can report this: the version rides on the
+  /// product characteristic, which the peripheral publishes on connect — so it
+  /// is available before pairing and without a device round-trip. The USB
+  /// transport does not carry it, and returns null.
+  ///
+  /// Null therefore means "this transport cannot report a version", NOT "old
+  /// firmware". Callers deciding firmware-compatibility policy must treat the
+  /// two apart, or they will penalise every USB device.
+  Future<String?> getFirmwareVersion();
+
   Future<bool> supportsETH(int chainId);
 
   Future<bool> supportsERC20(String contractAddress);

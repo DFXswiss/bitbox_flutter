@@ -83,6 +83,19 @@ class MethodChannelBitboxUsb extends BitboxUsbPlatform {
   }
 
   @override
+  Future<String?> getFirmwareVersion() async {
+    // The USB platform does not register this method, so an older or
+    // USB-only host answers with MissingPluginException rather than a value.
+    // That is the same "cannot report a version" case as a null result, and
+    // must not be mistaken for old firmware — see the interface doc.
+    try {
+      return await methodChannel.invokeMethod<String>('getFirmwareVersion');
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  @override
   Future<Uint8List> getMasterFingerprint() async {
     final result =
         await methodChannel.invokeMethod<Uint8List>('getMasterFingerprint');

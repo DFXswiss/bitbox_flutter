@@ -34,6 +34,8 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
             channelHashVerify(result: result)
         case "getDeviceStatus":
             getDeviceStatus(result: result)
+        case "getFirmwareVersion":
+            getFirmwareVersion(result: result)
         case "supportsETH":
             supportsETH(call: call, result: result)
         case "supportsERC20":
@@ -194,6 +196,18 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
         // ApiDeviceStatus() reads the SDK's cached firmware status — no device
         // round-trip — so it returns immediately without a background dispatch.
         result(ApiDeviceStatus())
+    }
+
+    /// The main firmware version, e.g. `"v9.26.4"`, read from the already-known
+    /// product characteristic rather than from the device over the wire. Like
+    /// getDeviceStatus this needs no round-trip, and it is readable as soon as
+    /// the peripheral connects — before pairing.
+    ///
+    /// Nil when no peripheral is connected, or the characteristic has not been
+    /// read yet. Note this is the main firmware version, NOT the separately
+    /// versioned Bluetooth firmware.
+    private func getFirmwareVersion(result: @escaping FlutterResult) {
+        result(bluetoothManager.parseProduct()?.version)
     }
 
     // MARK: - Feature Support

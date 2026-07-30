@@ -246,4 +246,35 @@ void main() {
     expect(await manager.getDeviceStatus(), 'uninitialized');
     expect(platform.count(SimulatedBitboxMethod.getDeviceStatus), 1);
   });
+
+  test('reports the firmware version', () async {
+    final platform = installSimulatedBitboxPlatform(
+      firmwareVersion: 'v9.26.4',
+    );
+    final manager = BitboxManager();
+    await manager.connect((await manager.devices).single);
+
+    expect(await manager.getFirmwareVersion(), 'v9.26.4');
+    expect(platform.count(SimulatedBitboxMethod.getFirmwareVersion), 1);
+  });
+
+  test('reports a null firmware version on a transport that cannot tell',
+      () async {
+    // The USB transport carries no product characteristic. Null must be
+    // distinguishable from an old version by the caller, never conflated.
+    installSimulatedBitboxPlatform(firmwareVersion: null);
+    final manager = BitboxManager();
+    await manager.connect((await manager.devices).single);
+
+    expect(await manager.getFirmwareVersion(), isNull);
+  });
+
+  test('reads the firmware version before the channel is open', () async {
+    // On hardware the version is published on connect, before pairing, so a
+    // firmware gate must be able to consult it without an open channel.
+    installSimulatedBitboxPlatform(firmwareVersion: 'v9.26.4');
+    final manager = BitboxManager();
+
+    expect(await manager.getFirmwareVersion(), 'v9.26.4');
+  });
 }

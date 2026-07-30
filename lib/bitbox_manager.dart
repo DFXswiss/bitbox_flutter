@@ -39,6 +39,12 @@ class BitboxManager {
   Future<String> getDeviceStatus() =>
       BitboxUsbPlatform.instance.getDeviceStatus();
 
+  /// The connected device's main firmware version, e.g. `"v9.26.4"`, or null
+  /// when the transport cannot report one (USB). Null is not "old firmware" —
+  /// see [BitboxUsbPlatform.getFirmwareVersion].
+  Future<String?> getFirmwareVersion() =>
+      BitboxUsbPlatform.instance.getFirmwareVersion();
+
   Future<bool> supportsLTC() => BitboxUsbPlatform.instance.supportsLTC();
 
   Future<bool> supportsETH(int chainId) =>

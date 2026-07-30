@@ -18,6 +18,7 @@ final class SimulatedBitboxMethod {
   static const getChannelHash = 'getChannelHash';
   static const channelHashVerify = 'channelHashVerify';
   static const getDeviceStatus = 'getDeviceStatus';
+  static const getFirmwareVersion = 'getFirmwareVersion';
   static const supportsETH = 'supportsETH';
   static const supportsERC20 = 'supportsERC20';
   static const supportsLTC = 'supportsLTC';
@@ -68,6 +69,7 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
     this.initResult = true,
     this.channelHashVerifyResult = true,
     this.deviceStatus = 'initialized',
+    this.firmwareVersion = 'v9.26.4',
     this.supportsETHResult = true,
     this.supportsERC20Result = true,
     this.supportsLTCResult = true,
@@ -159,6 +161,9 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
   final bool initResult;
   final bool channelHashVerifyResult;
   final String deviceStatus;
+
+  /// Set to null to simulate a transport that cannot report a version (USB).
+  final String? firmwareVersion;
   final bool supportsETHResult;
   final bool supportsERC20Result;
   final bool supportsLTCResult;
@@ -284,6 +289,17 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
         SimulatedBitboxMethod.getDeviceStatus,
         const <String, Object?>{},
         deviceStatus,
+      );
+
+  // needsOpen: false — on a real device the version comes off the product
+  // characteristic as soon as the peripheral connects, before pairing, so a
+  // gate is free to consult it before the channel is open.
+  @override
+  Future<String?> getFirmwareVersion() => _run<String?>(
+        SimulatedBitboxMethod.getFirmwareVersion,
+        const <String, Object?>{},
+        firmwareVersion,
+        needsOpen: false,
       );
 
   @override
@@ -533,6 +549,7 @@ SimulatedBitboxPlatform installSimulatedBitboxPlatform({
   bool initResult = true,
   bool channelHashVerifyResult = true,
   String deviceStatus = 'initialized',
+  String? firmwareVersion = 'v9.26.4',
   bool supportsETHResult = true,
   bool supportsERC20Result = true,
   bool supportsLTCResult = true,
@@ -562,6 +579,7 @@ SimulatedBitboxPlatform installSimulatedBitboxPlatform({
     initResult: initResult,
     channelHashVerifyResult: channelHashVerifyResult,
     deviceStatus: deviceStatus,
+    firmwareVersion: firmwareVersion,
     supportsETHResult: supportsETHResult,
     supportsERC20Result: supportsERC20Result,
     supportsLTCResult: supportsLTCResult,
