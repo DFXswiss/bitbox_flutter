@@ -81,7 +81,11 @@ func TestAndroidReleasesTheDeviceOnCloseAndConnect(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Index(body, "Api.releaseDevice()") > strings.Index(body, "connectBitBox(") {
+	release, connect := callIndex(body, "Api.releaseDevice()"), callIndex(body, "connectBitBox(")
+	if connect < 0 {
+		t.Fatal("connectBitBox( not found in onMethodCall — this source assertion needs updating")
+	}
+	if release < 0 || release > connect {
 		t.Fatal("ConnectBitBoxOperation must release before connectBitBox rebinds, or it drops the device it just bound")
 	}
 }
@@ -136,11 +140,20 @@ func swiftFunctionBody(t *testing.T, path, signature string) (string, error) {
 // it in a trailing comment satisfies the guard — both are likelier than the
 // call simply vanishing.
 func containsCall(body, target string) bool {
+	return callIndex(body, target) >= 0
+}
+
+// callIndex is containsCall with a position: the offset of the first real call
+// to target, or -1. Ordering checks must use this rather than strings.Index, or
+// a commented-out decoy earlier in the body would satisfy them.
+func callIndex(body, target string) int {
+	offset := 0
 	for _, line := range strings.Split(body, "\n") {
 		code, _, _ := strings.Cut(line, "//")
-		if strings.Contains(code, target) {
-			return true
+		if i := strings.Index(code, target); i >= 0 {
+			return offset + i
 		}
+		offset += len(line) + 1
 	}
-	return false
+	return -1
 }

@@ -124,7 +124,8 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         // Connecting starts a new device even if the previous one was never
         // closed, and nothing rebinds the Go side until initBitBox. Without
         // this, the peripheral we are leaving keeps answering for the one we
-        // are joining. Android gets this for free: open() calls GetDevice.
+        // are joining. ConnectBitBoxOperation does the same on Android, where
+        // Api.getDevice only rebinds on the success path.
         ApiReleaseDevice()
 
         // Reset characteristics for fresh connection

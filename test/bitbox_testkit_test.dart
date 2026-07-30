@@ -354,6 +354,23 @@ void main() {
     expect(await manager.supportsLTC(), isTrue);
   });
 
+  test('reports no firmware version when the device declines the pairing',
+      () async {
+    // The plugin's trap, modelled: the SDK reports a decline by leaving the
+    // channel hash unverified, not by failing, so initBitBox still resolves
+    // true. A gate keyed on that boolean would proceed on a channel the device
+    // refused.
+    installSimulatedBitboxPlatform(pairingVerified: false);
+    final manager = BitboxManager();
+    await manager.connect((await manager.devices).single);
+
+    expect(await manager.initBitBox(), isTrue);
+
+    expect(await manager.getFirmwareVersion(), isNull);
+    expect(await manager.supportsETH(1), isFalse);
+    expect(await manager.supportsERC20('0xToken'), isFalse);
+  });
+
   test('reports no capabilities before initBitBox has run', () async {
     // open() alone tells the plugin nothing about the device, so every
     // capability answer is false until init binds it — as on hardware.

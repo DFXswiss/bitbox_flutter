@@ -38,7 +38,12 @@ jobs:
           cache: true
           cache-dependency-path: go/go.sum
       - run: go vet ./...
-      - run: go test -race -timeout 60s ./...
+      # -count=1 disables the test cache. The source assertions in
+      # ios_bluetooth_regression_test.go read Swift and Kotlin files, which live
+      # outside the module root, so cmd/go does not hash them into the cache key
+      # — a PR that only touches those files would otherwise be served a stale
+      # "ok" and the guards would never run.
+      - run: go test -race -timeout 60s -count=1 ./...
 
   yaml-lint:
     name: Workflow YAML lint

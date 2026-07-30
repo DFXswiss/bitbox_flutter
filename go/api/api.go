@@ -191,12 +191,12 @@ func ChannelHashVerify(ok bool) {
 		return
 	}
 	device.ChannelHashVerify(ok)
-	if !ok {
-		// The host rejected the code, so the channel is repudiated from this
-		// side too and must stop answering a version gate. The SDK marks the
-		// status but leaves its own device-verified flag set.
-		setInitialised(device, false)
-	}
+	// The host rejecting the code repudiates the channel from this side, so it
+	// must stop answering a version gate — the SDK marks the status but leaves
+	// its own device-verified flag set. Re-affirming restores it, since the SDK
+	// leaves the channel usable and a full re-init should not be required.
+	_, deviceVerified := device.ChannelHash()
+	setInitialised(device, ok && deviceVerified)
 }
 
 //export InitDevice
@@ -288,9 +288,9 @@ func SupportsETH(chainId int) (supported bool) {
 	device, versionSynthetic, initialised := currentDevice()
 	if device == nil || !initialised || versionSynthetic {
 		// The SDK answers this by comparing the firmware version, so a version
-		// we invented — or one from a device whose init never succeeded —
-		// would decide it. Report no support rather than a capability derived
-		// from a number the device never stood behind.
+		// we invented — or one from a device whose pairing was never
+		// established — would decide it. Report no support rather than a
+		// capability derived from a number the device never stood behind.
 		return false
 	}
 	return device.SupportsETH(uint64(chainId))

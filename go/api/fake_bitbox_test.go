@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/big"
 	"reflect"
+	"runtime"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -574,6 +575,10 @@ func TestDeviceStateIsSafeUnderConcurrentReplacement(t *testing.T) {
 				// Mark it, or the readers below can only ever see the
 				// uninitialised answer and the assertion goes vacuous.
 				setInitialised(fake, true)
+				// Uncontended mutexes never park the goroutine, so with a
+				// single P a writer would otherwise run all its iterations
+				// before any reader starts and always be observed released.
+				runtime.Gosched()
 				ReleaseDevice()
 			}
 		}()

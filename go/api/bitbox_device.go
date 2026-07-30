@@ -84,8 +84,9 @@ var (
 )
 
 // currentDevice returns the connected device together with whether its version
-// was invented rather than reported, and whether InitDevice has succeeded on
-// it. Read under one lock, so no caller can see a half-replaced device.
+// was invented rather than reported, and whether its pairing is established —
+// device-verified and not since repudiated by the host. Read under one lock, so
+// no caller can see a half-replaced device.
 func currentDevice() (device bitboxDevice, versionSynthetic bool, initialised bool) {
 	deviceMu.RLock()
 	defer deviceMu.RUnlock()
@@ -94,8 +95,8 @@ func currentDevice() (device bitboxDevice, versionSynthetic bool, initialised bo
 }
 
 // setDevice replaces the connected device. Pass nil to release it. The device
-// always starts uninitialised: a version is only trustworthy once InitDevice
-// has run, on Bluetooth as much as on USB.
+// always starts with no established pairing: a version is only trustworthy once
+// the device has confirmed the channel, on Bluetooth as much as on USB.
 func setDevice(device bitboxDevice, versionSynthetic bool) {
 	deviceMu.Lock()
 	defer deviceMu.Unlock()
@@ -105,9 +106,10 @@ func setDevice(device bitboxDevice, versionSynthetic bool) {
 	deviceInitialised = false
 }
 
-// setInitialised records the outcome of an init attempt, but only while device
-// is still the connected one — a disconnect during the pairing wait must not be
-// undone by the init that was already in flight.
+// setInitialised records whether the pairing is established — an init outcome
+// or a host repudiation — but only while device is still the connected one, so
+// a disconnect during the pairing wait is not undone by the call already in
+// flight.
 func setInitialised(device bitboxDevice, initialised bool) {
 	deviceMu.Lock()
 	defer deviceMu.Unlock()

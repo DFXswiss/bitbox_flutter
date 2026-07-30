@@ -67,6 +67,7 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
     this.permissionResult = true,
     this.openResult = true,
     this.initResult = true,
+    this.pairingVerified = true,
     this.channelHashVerifyResult = true,
     this.deviceStatus = 'initialized',
     this.firmwareVersion = 'v9.26.4',
@@ -159,6 +160,12 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
   final bool permissionResult;
   final bool openResult;
   final bool initResult;
+
+  /// Whether the device confirms the pairing. Set to false to model a user
+  /// declining on the device: [initBitBox] still resolves true, exactly as the
+  /// plugin does, but the version and the capabilities derived from it stay
+  /// withheld.
+  final bool pairingVerified;
   final bool channelHashVerifyResult;
   final String deviceStatus;
 
@@ -191,8 +198,9 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
 
   bool get isOpen => _isOpen;
 
-  /// Whether [initBitBox] has succeeded on the currently open device. The
-  /// firmware version is only readable from that point on, as on hardware.
+  /// Whether the currently open device's pairing is established. The firmware
+  /// version is only readable from that point on. Note this is not the same as
+  /// [initBitBox] returning true — see [pairingVerified].
   bool get isInitialised => _isInitialised;
 
   bool get channelHashVerified => _channelHashVerified;
@@ -272,7 +280,7 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
       const <String, Object?>{},
       initResult,
     );
-    _isInitialised = result;
+    _isInitialised = result && pairingVerified;
     return result;
   }
 
@@ -308,10 +316,11 @@ class SimulatedBitboxPlatform extends BitboxUsbPlatform {
         deviceStatus,
       );
 
-  // On hardware the version is read from the device initBitBox bound, so it
-  // stays absent until then and returns after close. The simulator models that
-  // rather than the looser open-only gate, so a consumer's version gate cannot
-  // pass here and read null in the field.
+  // On hardware the version is read from the device initBitBox bound, and only
+  // once that device has confirmed the pairing, so it stays absent until then
+  // and returns after close. The simulator models that rather than the looser
+  // open-only gate, so a consumer's version gate cannot pass here and read null
+  // in the field.
   @override
   Future<String?> getFirmwareVersion() async {
     final version = await _run<String?>(
@@ -599,6 +608,7 @@ SimulatedBitboxPlatform installSimulatedBitboxPlatform({
   bool permissionResult = true,
   bool openResult = true,
   bool initResult = true,
+  bool pairingVerified = true,
   bool channelHashVerifyResult = true,
   String deviceStatus = 'initialized',
   String? firmwareVersion = 'v9.26.4',
@@ -629,6 +639,7 @@ SimulatedBitboxPlatform installSimulatedBitboxPlatform({
     permissionResult: permissionResult,
     openResult: openResult,
     initResult: initResult,
+    pairingVerified: pairingVerified,
     channelHashVerifyResult: channelHashVerifyResult,
     deviceStatus: deviceStatus,
     firmwareVersion: firmwareVersion,
