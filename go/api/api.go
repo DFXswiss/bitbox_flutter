@@ -275,9 +275,9 @@ func FirmwareVersion() (version string) {
 		// device a gate never actually identified.
 		return ""
 	}
-	// Version() panics when the version is not known yet, which is the normal
-	// state for USB before InitDevice. recoverPanic turns that into the ""
-	// zero value, so the not-known case stays indistinguishable from no device.
+	// Version() panics when the version is not known yet. The pairing gate above
+	// already answered "" for every state the SDK can reach with an unknown
+	// version, so this is a backstop should that ever widen.
 	return "v" + device.Version().String()
 }
 

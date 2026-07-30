@@ -290,11 +290,13 @@ func ptr[T any](value T) *T {
 	return &value
 }
 
-// A USB device carries no version until InitDevice has run the OP_INFO
-// exchange, and the SDK panics rather than returning nil in that window. The
-// gomobile boundary must absorb it: an empty string means "not known yet", and
-// a caller gating on a minimum version must not read that as old firmware.
-func TestFirmwareVersionReturnsEmptyBeforeTheDeviceReportsOne(t *testing.T) {
+// The SDK panics rather than returning nil when the version is unknown. The
+// pairing gate answers "" before that can happen in any state the SDK reaches,
+// so this fake reports a device-verified channel while Version() still panics —
+// a combination the SDK cannot produce — to keep the recoverPanic backstop
+// pinned. An empty string means "not known", and a caller gating on a minimum
+// version must not read that as old firmware.
+func TestFirmwareVersionReturnsEmptyWhenTheVersionIsUnknown(t *testing.T) {
 	fake := &fakeBitboxDevice{
 		status:        firmware.StatusInitialized,
 		channelHashOk: true,
@@ -305,7 +307,7 @@ func TestFirmwareVersionReturnsEmptyBeforeTheDeviceReportsOne(t *testing.T) {
 		t.Fatal("expected simulated init to succeed")
 	}
 	if got := FirmwareVersion(); got != "" {
-		t.Fatalf("expected empty firmware version from a device that reported none, got %q", got)
+		t.Fatalf("expected the panic to be absorbed into an empty version, got %q", got)
 	}
 	if !slices.Contains(fake.calls, "Version") {
 		t.Fatal("expected FirmwareVersion to consult the device")
