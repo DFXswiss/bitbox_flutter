@@ -417,7 +417,10 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         currentContext = nil
         currentContextLock.unlock()
 
-        restartScan()
+        // close/disconnect before any scan must not create CBCentralManager.
+        if scanRequested {
+            restartScan()
+        }
     }
 
     // This method gets called if the peripheral disconnects
