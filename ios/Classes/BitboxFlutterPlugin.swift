@@ -18,7 +18,7 @@ public class BitboxFlutterPlugin: NSObject, FlutterPlugin {
         case "getDevices":
             getDevices(result: result)
         case "requestPermission":
-            // On iOS, Bluetooth permission is requested automatically
+            // The dialog appears when a scan creates CBCentralManager, not here.
             result(true)
         case "startScan":
             startScan(result: result)
