@@ -69,7 +69,12 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         discoveredPeripherals: [:]
     )
 
-    var centralManager: CBCentralManager!
+    // iOS shows the Bluetooth permission dialog when this object is created.
+    // It stays nil until a scan is requested, so opening the app does not ask.
+    private var centralManagerStorage: CBCentralManager?
+    private var isCreatingCentralManager = false
+    private var scanRequested = false
+
     var connectedPeripheral: CBPeripheral?
     var pWriter: CBCharacteristic?
     var pReader: CBCharacteristic?
@@ -88,11 +93,20 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     // deadlock.
     private let currentContextLock = NSLock()
 
-    override init() {
-        super.init()
-        centralManager = CBCentralManager(delegate: self, queue: nil)
-        state.bluetoothAvailable = centralManager.state == .poweredOn
-        updateBackendState()
+    /// Creates the system Bluetooth manager on the first scan. A callback during
+    /// that creation must not create a second manager.
+    private func activateCentralManager() -> CBCentralManager? {
+        if let centralManagerStorage {
+            return centralManagerStorage
+        }
+        if isCreatingCentralManager {
+            return nil
+        }
+        isCreatingCentralManager = true
+        let created = CBCentralManager(delegate: self, queue: nil)
+        centralManagerStorage = created
+        isCreatingCentralManager = false
+        return created
     }
 
     func isConnected() -> Bool {
@@ -118,7 +132,9 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     }
 
     func connect(to peripheralID: UUID) {
-        guard var metadata = state.discoveredPeripherals[peripheralID] else { return }
+        guard var metadata = state.discoveredPeripherals[peripheralID],
+            let centralManager = centralManagerStorage
+        else { return }
         centralManager.stopScan()
 
         // Reset characteristics for fresh connection
@@ -140,6 +156,12 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     }
 
     func restartScan() {
+        scanRequested = true
+        guard let centralManager = activateCentralManager() else { return }
+        beginScan(using: centralManager)
+    }
+
+    private func beginScan(using centralManager: CBCentralManager) {
         guard centralManager.state == .poweredOn,
             !centralManager.isScanning,
             connectedPeripheral == nil
@@ -154,13 +176,15 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     }
 
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        state.bluetoothAvailable = centralManager.state == .poweredOn
+        state.bluetoothAvailable = central.state == .poweredOn
         updateBackendState()
 
         switch central.state {
         case .poweredOn:
             print("BLE: on")
-            restartScan()
+            if scanRequested {
+                beginScan(using: central)
+            }
         case .poweredOff, .unauthorized, .unsupported, .resetting, .unknown:
             print("BLE: unavailable or not supported")
             handleDisconnect()
